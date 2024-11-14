@@ -1,0 +1,9 @@
+venv/
+log/
+test/
+.idea/
+docker
+
+.env
+.pyc
+__pycache__/
