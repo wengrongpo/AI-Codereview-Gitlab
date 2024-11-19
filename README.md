@@ -156,3 +156,9 @@ docker-compose up -d
 - 更新 .env 中的 DINGTALK_ACCESS_TOKEN 和 DINGTALK_SECRET 配置。
 
 - 系统会在代码审查完成后，自动将结果推送到钉钉群。
+
+## 交流
+
+如果您有任何问题或建议，欢迎提交 Issue 或 PR，我会尽快处理。此外，您也可以添加微信与我交流：
+
+![Push图片](./doc/img/wechat.jpeg)
