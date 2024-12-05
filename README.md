@@ -72,6 +72,7 @@ OPENAI_API_MODEL=gpt-4o-mini
 
 #支持review的文件类型(未配置的文件扩展名会被忽略)
 SUPPORTED_EXTENSIONS=.java,.py,.php,.yml
+#提交给大模型的最长字符数,超出的部分会截断
 REVIEW_MAX_LENGTH=20000
 
 #钉钉配置
@@ -87,7 +88,9 @@ LOG_BACKUP_COUNT=3
 LOG_LEVEL=DEBUG
 
 #工作日报配置
+#日报源数据存放位置
 REPORT_DATA_DIR=log
+#日报生成定时器, 默认周一至周五每天18:00生成
 REPORT_CRONTAB_EXPRESSION=0 18 * * 1-5
 ```
 
