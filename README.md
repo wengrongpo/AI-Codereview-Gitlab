@@ -1,3 +1,5 @@
+![Push图片](./doc/img/ai-codereview-cartoon.png)
+
 ## 项目简介
 
 本项目是一个基于大模型的自动化代码审查工具，帮助开发团队在代码合并或提交时，快速进行智能化的 Code Review，提升代码质量和开发效率。
