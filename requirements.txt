@@ -3,4 +3,4 @@ requests==2.32.3
 spark-ai-python==0.4.5
 zhipuai==2.1.5.20230904
 APScheduler==3.10.4
-openai==1.54.4
+openai==1.59.3
