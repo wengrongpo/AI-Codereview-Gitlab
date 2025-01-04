@@ -60,9 +60,6 @@ pip install -r requirements.txt
 #服务端口
 SERVER_PORT=5001
 
-#Gitlab配置
-GITLAB_ACCESS_TOKEN=xxx
-
 #大模型供应商配置,支持 zhipuai , openai or deepseek
 LLM_PROVIDER=zhipuai
 #ZhipuAI settings
