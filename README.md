@@ -63,7 +63,7 @@ SERVER_PORT=5001
 #Gitlab配置
 GITLAB_ACCESS_TOKEN=xxx
 
-#大模型供应商配置,支持 zhipuai 和 openai
+#大模型供应商配置,支持 zhipuai , openai or deepseek
 LLM_PROVIDER=zhipuai
 #ZhipuAI settings
 ZHIPUAI_API_KEY=xxxx
@@ -71,6 +71,10 @@ ZHIPUAI_API_MODEL=GLM-4-Flash
 #OpenAI settings
 OPENAI_API_KEY=xxxx
 OPENAI_API_MODEL=gpt-4o-mini
+#DeepSeek settings
+DEEPSEEK_API_KEY=
+DEEPSEEK_API_BASE_URL=https://api.deepseek.com  #DeepSeek API use this base url
+DEEPSEEK_API_MODEL=deepseek-chat
 
 #支持review的文件类型(未配置的文件扩展名会被忽略)
 SUPPORTED_EXTENSIONS=.java,.py,.php,.yml
@@ -94,6 +98,9 @@ LOG_LEVEL=DEBUG
 REPORT_DATA_DIR=log
 #日报生成定时器, 默认周一至周五每天18:00生成
 REPORT_CRONTAB_EXPRESSION=0 18 * * 1-5
+
+#Gitlab配置
+GITLAB_ACCESS_TOKEN=xxx
 ```
 
 **4. 启动服务**
