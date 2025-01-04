@@ -93,9 +93,8 @@ def handle_webhook():
         event_type = request.headers.get('X-Gitlab-Event')
         gitlab_url = request.headers.get('X-Gitlab-Instance')
         gitlab_token = request.headers.get('X-Gitlab-Token')
-        # 如果gitlab_token为空，从环境变量获取
-        if not gitlab_token:
-            gitlab_token = os.getenv('GITLAB_ACCESS_TOKEN')
+        # 优先从环境变量获取，如果没有，则从请求头获取
+        gitlab_token = os.getenv('GITLAB_ACCESS_TOKEN') or request.headers.get('X-Gitlab-Token')
         # 如果gitlab_token为空，返回错误
         if not gitlab_token:
             return jsonify({'message': 'Missing GitLab access token'}), 400
