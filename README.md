@@ -9,31 +9,31 @@
 ## 功能
 
 - **代码审查:**
-  使用大模型对提交的代码进行分析和审查。
+  使用大模型对代码进行分析和审查，并给出分数和建议。
 
 - **自动发送审查结果:**
-  审查完成后，系统会自动将结果推送到指定的钉钉群，以及更新Merge Request 或 Commit 的 Note。
+  自动推送审核结果到钉钉群，以及更新GitLab Merge Request 或 Commit 的 Note。
 
 - **生成员工日报:**
-  系统根据团队成员的提交记录，自动生成日报，汇总个人工作情况和代码贡献。
+  根据成员的Commit记录，自动生成工作日报。
 
 **效果图:**
 
 ![Push图片](./doc/img/push.jpeg)
 
-![MR图片](./doc/img/mr.jpeg)
+![MR图片](./doc/img/mr.png)
 
 ![Note图片](./doc/img/note.jpeg)
 
 ## 原理
 
-当用户在 GitLab 上提交代码（包括 Merge Request 或 Push 操作）时，GitLab 会触发 webhook 事件。该 webhook
-调用本系统的接口，系统调用第三方大模型对提交的代码进行智能化审查，并将审查结果记录在对应的 Merge Request 或 Commit 的 note
+当用户在 GitLab 上提交代码（包括 Merge Request 或 Push 操作）时，GitLab 会触发 webhook 事件，并
+调用本系统的接口；本系统调用第三方大模型对提交的代码进行审查，并将审查结果记录在对应的 Merge Request 或 Commit 的 note
 中。
 
 ## 部署
 
-### 本地Python环境部署
+### 方案一：本地Python环境部署
 
 **1. 获取源码**
 
@@ -61,7 +61,7 @@ pip install -r requirements.txt
 SERVER_PORT=5001
 
 #大模型供应商配置,支持 zhipuai , openai or deepseek
-LLM_PROVIDER=zhipuai
+LLM_PROVIDER=deepseek
 #ZhipuAI settings
 ZHIPUAI_API_KEY=xxxx
 ZHIPUAI_API_MODEL=GLM-4-Flash
@@ -108,7 +108,7 @@ GITLAB_ACCESS_TOKEN=xxx
 python api.py
 ```
 
-### Docker 部署
+### 方案二：Docker 部署
 
 **1. 创建目录和配置文件**
 ```bash
@@ -124,7 +124,7 @@ mkdir log
 ```
 services:
   flask-app:
-    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.0
+    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.1
     ports:
       - "5001:5001"
     environment:
@@ -170,4 +170,4 @@ docker-compose up -d
 
 如果您有任何问题或建议，欢迎提交 Issue 或 PR，我会尽快处理。此外，您也可以添加微信与我交流：
 
-![Push图片](./doc/img/wechat.jpeg)
+![wechat](./doc/img/wechat.jpeg)
