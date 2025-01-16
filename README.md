@@ -153,7 +153,7 @@ docker-compose up -d
 在 GitLab 项目设置中，配置 Webhook：
 
 - URL：http://your-server-ip:5001/review/webhook
-- Trigger Events：勾选 Push Events 和 Merge Request Events
+- Trigger Events：勾选 Push Events 和 Merge Request Events (不要勾选其它Event)
 - Secret Token：上面配置的 Access Token
 
 备注：如Webhook没有配置Secret Token, 系统会取.env中的GITLAB_ACCESS_TOKEN作为Secret Token
