@@ -167,7 +167,20 @@ docker-compose up -d
 
 - 更新 .env 中的 DINGTALK_ACCESS_TOKEN 和 DINGTALK_SECRET 配置。
 
-- 系统会在代码审查完成后，自动将结果推送到钉钉群。
+- 系统会在代码审查完成后，自动将结果推送到钉钉群（支持企业微信群一并推送）。
+
+### 配置企业微信推送
+
+- 在企业微信群中添加一个自定义机器人，获取 Webhook URL。
+
+- 更新 .env 中的配置：
+  ```
+  #企业微信配置
+  WECOM_ENABLED=1  #0不发送企业微信消息，1发送企业微信消息
+  WECOM_WEBHOOK_URL=https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx  #替换为你的Webhook URL
+  ```
+
+- 系统会在代码审查完成后，自动将结果推送到企业微信群（支持钉钉群一并推送）。
 
 ## 交流
 
