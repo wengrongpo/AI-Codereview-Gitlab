@@ -87,6 +87,10 @@ DINGTALK_ENABLED=0
 DINGTALK_ACCESS_TOKEN={YOUR_DINGTALK_ACCESS_TOKEN}
 DINGTALK_SECRET={YOUR_DINGTALK_SECRET}
 
+#企业微信配置
+WECOM_ENABLED=0
+WECOM_WEBHOOK_URL=xxx
+
 #日志配置
 LOG_FILE=log/app.log
 LOG_MAX_BYTES=10485760
@@ -127,7 +131,7 @@ mkdir log
 ```
 services:
   flask-app:
-    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.1
+    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.2
     ports:
       - "5001:5001"
     environment:
