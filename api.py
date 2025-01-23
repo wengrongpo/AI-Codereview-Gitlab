@@ -15,6 +15,7 @@ from biz.ai.reporter import Reporter
 from biz.gitlab.webhook_handler import MergeRequestHandler, PushHandler
 from biz.utils.dingtalk import DingTalkNotifier
 from biz.utils.log import logger
+from biz.utils.wecom import WeComNotifier
 
 load_dotenv()
 app = Flask(__name__)
@@ -55,7 +56,7 @@ def daily_report():
     commits = sorted(unique_commits.values(), key=lambda x: x["author"])
     report_txt = Reporter().generate_report(json.dumps(commits))
     # 发钉钉消息
-    send_dingtalk_message(content=report_txt, msg_type="markdown", title="代码提交日报")
+    send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
     return json.dumps(report_txt, ensure_ascii=False, indent=4)
 
 
@@ -157,11 +158,11 @@ def handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
                 f"- [查看提交详情]({url})\n\n\n\n"
             )
 
-        send_dingtalk_message(content=dingtalk_msg, msg_type='markdown',
+        send_notification(content=dingtalk_msg, msg_type='markdown',
                               title=f"{webhook_data['project']['name']} Push Event")
     except Exception as e:
         error_message = f'服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
-        send_dingtalk_message(error_message)
+        send_notification(error_message)
         logger.error('出现未知错误: %s', error_message)
 
 
@@ -211,11 +212,11 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
             f"- **AI Review 结果:** {review_result}"
         )
 
-        send_dingtalk_message(content=dingtalk_msg, msg_type='markdown', title='Merge Request Review')
+        send_notification(content=dingtalk_msg, msg_type='markdown', title='Merge Request Review')
 
     except Exception as e:
         error_message = f'AI Code Review 服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
-        send_dingtalk_message(error_message)
+        send_notification(error_message)
         logger.error('出现未知错误: %s', error_message)
 
 
@@ -284,12 +285,23 @@ def review_code(changes_text: str, commits_text: str = '') -> str:
     return CodeReviewer().review_code(changes_text, commits_text)
 
 
-def send_dingtalk_message(content, msg_type='text', title="通知", is_at_all=False):
+def send_notification(content, msg_type='text', title="通知", is_at_all=False):
+    """
+    发送通知消息到配置的平台(钉钉和企业微信)
+    :param content: 消息内容
+    :param msg_type: 消息类型，支持text和markdown
+    :param title: 消息标题(markdown类型时使用)
+    :param is_at_all: 是否@所有人
+    """
+    # 钉钉推送
     access_token = os.environ.get('DINGTALK_ACCESS_TOKEN', '')
     secret = os.environ.get('DINGTALK_SECRET', '')
     notifier = DingTalkNotifier(access_token, secret)
-
     notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all)
+
+    # 企业微信推送
+    wecom_notifier = WeComNotifier()
+    wecom_notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all)
 
 
 if __name__ == '__main__':
