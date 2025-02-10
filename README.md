@@ -167,10 +167,14 @@ docker-compose up -d
 
 ### 配置钉钉推送
 
-- 在钉钉群中添加一个自定义机器人，获取 Webhook URL 和 Access Token和Secret。
-
-- 更新 .env 中的 DINGTALK_ACCESS_TOKEN 和 DINGTALK_SECRET 配置。
-
+- 在钉钉群中添加一个自定义机器人，获取 Webhook URL。
+- 更新 .env 中的配置：
+  ```
+  #钉钉配置
+  DINGTALK_ENABLED=1  #0不发送钉钉消息，1发送钉钉消息
+  DINGTALK_WEBHOOK_URL=https://oapi.dingtalk.com/robot/send?access_token=xxx #替换为你的Webhook URL
+  ```
+- 如果使用企业机器人，需要配置DINGTALK_SECRET。
 - 系统会在代码审查完成后，自动将结果推送到钉钉群（支持企业微信群一并推送）。
 
 ### 配置企业微信推送

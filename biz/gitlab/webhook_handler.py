@@ -14,6 +14,7 @@ class MergeRequestHandler:
         self.event_type = None
         self.merge_request_id = None
         self.project_id = None
+        self.action = None
         self.parse_event_type()
 
     def parse_event_type(self):
@@ -27,6 +28,7 @@ class MergeRequestHandler:
         merge_request = self.webhook_data.get('object_attributes', {})
         self.merge_request_iid = merge_request.get('iid')
         self.project_id = merge_request.get('target_project_id')
+        self.action = merge_request.get('action')
 
     def get_merge_request_changes(self) -> list:
         # 检查是否为 Merge Request Hook 事件

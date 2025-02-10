@@ -159,7 +159,7 @@ def handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             )
 
         send_notification(content=dingtalk_msg, msg_type='markdown',
-                              title=f"{webhook_data['project']['name']} Push Event")
+                          title=f"{webhook_data['project']['name']} Push Event")
     except Exception as e:
         error_message = f'服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
         send_notification(error_message)
@@ -178,41 +178,44 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
         # 解析Webhook数据
         handler = MergeRequestHandler(webhook_data, gitlab_token, gitlab_url)
         logger.info('Merge Request Hook event received')
-        # 获取Merge Request的changes
-        changes = handler.get_merge_request_changes()
-        logger.info('changes: %s', changes)
-        if not changes:
-            logger.info('未检测到有关代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
-            return jsonify({
-                'message': 'No code modifications were detected, the modified file may not satisfy SUPPORTED_EXTENSIONS.'}), 500
-        # 获取Merge Request的commits
-        commits = handler.get_merge_request_commits()
-        if not commits:
-            logger.error('Failed to get commits')
-            return jsonify({'message': 'Failed to get commits'}), 500
 
-        # review 代码
-        commits_text = ';'.join(commit['title'] for commit in commits)
-        review_result = review_code(str(filter_changes(changes)), commits_text)
+        if (handler.action == 'open'):  # 仅仅在MR创建时进行Code Review
+            # 获取Merge Request的changes
+            changes = handler.get_merge_request_changes()
+            logger.info('changes: %s', changes)
+            if not changes:
+                logger.info('未检测到有关代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
+                return jsonify({
+                    'message': 'No code modifications were detected, the modified file may not satisfy SUPPORTED_EXTENSIONS.'}), 500
+            # 获取Merge Request的commits
+            commits = handler.get_merge_request_commits()
+            if not commits:
+                logger.error('Failed to get commits')
+                return jsonify({'message': 'Failed to get commits'}), 500
 
-        # 将review结果提交到Gitlab的 notes
-        handler.add_merge_request_notes(f'Auto Review Result: {review_result}')
+            # review 代码
+            commits_text = ';'.join(commit['title'] for commit in commits)
+            review_result = review_code(str(filter_changes(changes)), commits_text)
 
-        # 构建 Markdown 格式的钉钉消息
-        dingtalk_msg = f"### 🔀 {webhook_data['project']['name']}: Merge Request\n\n"
-        dingtalk_msg += f"#### 合并请求信息:\n"
+            # 将review结果提交到Gitlab的 notes
+            handler.add_merge_request_notes(f'Auto Review Result: {review_result}')
 
-        dingtalk_msg += (
-            f"- **提交者:** {webhook_data['user']['name']}\n\n"
-            f"- **源分支**: `{webhook_data['object_attributes']['source_branch']}`\n"
-            f"- **目标分支**: `{webhook_data['object_attributes']['target_branch']}`\n"
-            f"- **更新时间**: {webhook_data['object_attributes']['updated_at']}\n"
-            f"- **提交信息:** {commits_text}\n\n"
-            f"- [查看合并详情]({webhook_data['object_attributes']['url']})\n\n"
-            f"- **AI Review 结果:** {review_result}"
-        )
+            # 构建 Markdown 格式的钉钉消息
+            dingtalk_msg = f"### 🔀 {webhook_data['project']['name']}: Merge Request\n\n"
+            dingtalk_msg += f"#### 合并请求信息:\n"
 
-        send_notification(content=dingtalk_msg, msg_type='markdown', title='Merge Request Review')
+            dingtalk_msg += (
+                f"- **提交者:** {webhook_data['user']['name']}\n\n"
+                f"- **源分支**: `{webhook_data['object_attributes']['source_branch']}`\n"
+                f"- **目标分支**: `{webhook_data['object_attributes']['target_branch']}`\n"
+                f"- **更新时间**: {webhook_data['object_attributes']['updated_at']}\n"
+                f"- **提交信息:** {commits_text}\n\n"
+                f"- [查看合并详情]({webhook_data['object_attributes']['url']})\n\n"
+                f"- **AI Review 结果:** {review_result}"
+            )
+            send_notification(content=dingtalk_msg, msg_type='markdown', title='Merge Request Review')
+        else:
+            logger.info(f"Merge Request Hook event, action={handler.action}, ignored.")
 
     except Exception as e:
         error_message = f'AI Code Review 服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
@@ -294,9 +297,7 @@ def send_notification(content, msg_type='text', title="通知", is_at_all=False)
     :param is_at_all: 是否@所有人
     """
     # 钉钉推送
-    access_token = os.environ.get('DINGTALK_ACCESS_TOKEN', '')
-    secret = os.environ.get('DINGTALK_SECRET', '')
-    notifier = DingTalkNotifier(access_token, secret)
+    notifier = DingTalkNotifier()
     notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all)
 
     # 企业微信推送
