@@ -84,8 +84,9 @@ REVIEW_MAX_LENGTH=20000
 #钉钉配置
 #0不发送钉钉消息，1发送钉钉消息
 DINGTALK_ENABLED=0
-DINGTALK_ACCESS_TOKEN={YOUR_DINGTALK_ACCESS_TOKEN}
-DINGTALK_SECRET={YOUR_DINGTALK_SECRET}
+DINGTALK_WEBHOOK_URL=https://oapi.dingtalk.com/robot/send?access_token=xxx #替换为你的Webhook URL
+#如果使用企业机器人, 需要配置DINGTALK_SECRET，具体可参考https://open.dingtalk.com/document/orgapp/obtain-orgapp-token
+#DINGTALK_SECRET={YOUR_DINGTALK_SECRET}
 
 #企业微信配置
 WECOM_ENABLED=0
