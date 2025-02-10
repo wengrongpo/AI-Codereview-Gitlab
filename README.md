@@ -84,9 +84,7 @@ REVIEW_MAX_LENGTH=20000
 #钉钉配置
 #0不发送钉钉消息，1发送钉钉消息
 DINGTALK_ENABLED=0
-DINGTALK_WEBHOOK_URL=https://oapi.dingtalk.com/robot/send?access_token=xxx #替换为你的Webhook URL
-#如果使用企业机器人, 需要配置DINGTALK_SECRET，具体可参考https://open.dingtalk.com/document/orgapp/obtain-orgapp-token
-#DINGTALK_SECRET={YOUR_DINGTALK_SECRET}
+DINGTALK_WEBHOOK_URL={YOUR_WDINGTALK_WEBHOOK_URL}
 
 #企业微信配置
 WECOM_ENABLED=0
@@ -132,7 +130,7 @@ mkdir log
 ```
 services:
   flask-app:
-    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.2
+    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.3
     ports:
       - "5001:5001"
     environment:
@@ -175,7 +173,8 @@ docker-compose up -d
   DINGTALK_ENABLED=1  #0不发送钉钉消息，1发送钉钉消息
   DINGTALK_WEBHOOK_URL=https://oapi.dingtalk.com/robot/send?access_token=xxx #替换为你的Webhook URL
   ```
-- 如果使用企业机器人，需要配置DINGTALK_SECRET。
+- 如果使用企业机器人，需要配置DINGTALK_SECRET，具体可参考：https://open.dingtalk.com/document/orgapp/obtain-orgapp-token
+
 - 系统会在代码审查完成后，自动将结果推送到钉钉群（支持企业微信群一并推送）。
 
 ### 配置企业微信推送
