@@ -180,7 +180,7 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
         handler = MergeRequestHandler(webhook_data, gitlab_token, gitlab_url)
         logger.info('Merge Request Hook event received')
 
-        if (handler.action == 'open'):  # 仅仅在MR创建时进行Code Review
+        if (handler.action in ['open', 'update']):  # 仅仅在MR创建或更新时进行Code Review
             # 获取Merge Request的changes
             changes = handler.get_merge_request_changes()
             logger.info('changes: %s', changes)
