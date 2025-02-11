@@ -90,7 +90,7 @@ class FeishuNotifier:
                 return
 
             result = response.json()
-            if result.get('errcode') != 0:
+            if result.get('msg') != "success":
                 logger.error(f"发送飞书消息失败: {result}")
             else:
                 logger.info("飞书消息发送成功")
