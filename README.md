@@ -4,7 +4,7 @@
 
 本项目是一个基于大模型的自动化代码审查工具，帮助开发团队在代码合并或提交时，快速进行智能化的 Code Review，提升代码质量和开发效率。
 
-目前，支持OpenAI和智谱AI两家大模型供应商，若需要对接其它模型，请自行修改代码。
+目前，支持DeepSeek、ZhipuAI、OpenAI大模型供应商，若需要对接其它模型，请自行修改代码。
 
 ## 功能
 
@@ -33,28 +33,18 @@
 
 ## 部署
 
-### 方案一：本地Python环境部署
+### 方案一：Docker 部署
 
-**1. 获取源码**
-
-从 GitHub 仓库克隆项目到服务器：
+**1. 创建目录和配置文件**
 
 ```bash
-git clone https://github.com/sunmh207/AI-Codereview-Gitlab.git
-cd AI-Codereview-Gitlab
+mkdir log
 ```
 
-**2. 安装依赖**
+<h5 id="env"></h5>
+**2. 创建.env文件**
 
-使用 Python 环境（建议使用虚拟环境 venv）安装项目依赖(Python 版本：3.10+):
-
-```bash
-pip install -r requirements.txt
-```
-
-**3. 配置环境变量**
-
-在项目根目录创建 .env 文件，并配置以下环境变量：
+根据实际情况，配置 .env 文件，内容如下：
 
 ```bash
 #服务端口
@@ -63,22 +53,22 @@ SERVER_PORT=5001
 #大模型供应商配置,支持 zhipuai , openai or deepseek
 LLM_PROVIDER=deepseek
 
-#ZhipuAI settings
+#ZhipuAI
 ZHIPUAI_API_KEY={YOUR_ZHIPUAI_API_KEY}
 ZHIPUAI_API_MODEL=GLM-4-Flash
 
-#OpenAI settings
+#OpenAI
 OPENAI_API_KEY={YOUR_OPENAI_API_KEY}
 OPENAI_API_MODEL=gpt-4o-mini
 
-#DeepSeek settings
+#DeepSeek
 DEEPSEEK_API_KEY={YOUR_DEEPSEEK_API_KEY}
-DEEPSEEK_API_BASE_URL=https://api.deepseek.com  #DeepSeek API use this base url
+DEEPSEEK_API_BASE_URL=https://api.deepseek.com 
 DEEPSEEK_API_MODEL=deepseek-chat
 
-#支持review的文件类型(未配置的文件扩展名会被忽略)
+#支持review的文件类型(未配置的文件类型不会被审查)
 SUPPORTED_EXTENSIONS=.java,.py,.php,.yml
-#提交给大模型的最长字符数,超出的部分会截断
+#提交给大模型的最长字符数,超出的部分会截断,防止大模型处理内容过长或Token消耗过多
 REVIEW_MAX_LENGTH=20000
 
 #钉钉配置
@@ -106,25 +96,6 @@ REPORT_CRONTAB_EXPRESSION=0 18 * * 1-5
 GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 ```
 
-**4. 启动服务**
-
-本项目默认使用 Flask 框架，您可以直接启动：
-
-```bash
-python api.py
-```
-
-### 方案二：Docker 部署
-
-**1. 创建目录和配置文件**
-```bash
-mkdir log
-```
-
-**2. 创建.env文件**
-
-同上面步骤 "3. 配置环境变量"
-
 **3. 创建docker-compose.yml文件**
 
 ```
@@ -140,6 +111,7 @@ services:
       - ./log:/app/log
     restart: unless-stopped
 ```
+
 **4. 启动docker容器**
 
 ```bash
@@ -148,11 +120,42 @@ docker compose up -d
 docker-compose up -d
 ```
 
+### 方案二：本地Python环境部署
+
+**1. 获取源码**
+
+从 GitHub 仓库克隆项目到服务器：
+
+```bash
+git clone https://github.com/sunmh207/AI-Codereview-Gitlab.git
+cd AI-Codereview-Gitlab
+```
+
+**2. 安装依赖**
+
+使用 Python 环境（建议使用虚拟环境 venv）安装项目依赖(Python 版本：3.10+):
+
+```bash
+pip install -r requirements.txt
+```
+
+**3. 配置环境变量**
+
+同 Docker 部署方案中的 【创建.env文件](#env)
+
+**4. 启动服务**
+
+```bash
+python api.py
+```
+
 ### 配置 GitLab Webhook
 
 #### **a) 创建Access Token**
 
-在 GitLab 个人设置中，创建一个 Access Token，用于调用 GitLab API：
+方法一：在 GitLab 个人设置中，创建一个 Personal Access Token。
+
+方法二：在 GitLab 项目设置中，创建Project Access Token
 
 #### **b) 配置 Webhook**
 
@@ -160,9 +163,9 @@ docker-compose up -d
 
 - URL：http://your-server-ip:5001/review/webhook
 - Trigger Events：勾选 Push Events 和 Merge Request Events (不要勾选其它Event)
-- Secret Token：上面配置的 Access Token
+- Secret Token：上面配置的 Access Token(可选)
 
-备注：如Webhook没有配置Secret Token, 系统会取.env中的GITLAB_ACCESS_TOKEN作为Secret Token
+备注：系统会优先使用.env中的GITLAB_ACCESS_TOKEN，如果找到，则使用Webhook 传递的Secret Token
 
 ### 配置钉钉推送
 
