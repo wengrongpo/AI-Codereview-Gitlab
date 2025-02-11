@@ -105,7 +105,7 @@ GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 ```
 services:
   flask-app:
-    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.3
+    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.4
     ports:
       - "5001:5001"
     environment:
