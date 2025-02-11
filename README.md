@@ -80,6 +80,10 @@ DINGTALK_WEBHOOK_URL={YOUR_WDINGTALK_WEBHOOK_URL}
 WECOM_ENABLED=0
 WECOM_WEBHOOK_URL={YOUR_WECOM_WEBHOOK_URL}
 
+#飞书配置
+FEISHU_ENABLED=0
+FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/xxx
+
 #日志配置
 LOG_FILE=log/app.log
 LOG_MAX_BYTES=10485760
@@ -178,8 +182,6 @@ python api.py
   ```
 - 如果使用企业机器人，需要配置DINGTALK_SECRET，具体可参考：https://open.dingtalk.com/document/orgapp/obtain-orgapp-token
 
-- 系统会在代码审查完成后，自动将结果推送到钉钉群（支持企业微信群一并推送）。
-
 ### 配置企业微信推送
 
 - 在企业微信群中添加一个自定义机器人，获取 Webhook URL。
@@ -191,7 +193,15 @@ python api.py
   WECOM_WEBHOOK_URL=https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx  #替换为你的Webhook URL
   ```
 
-- 系统会在代码审查完成后，自动将结果推送到企业微信群（支持钉钉群一并推送）。
+### 配置飞书推送
+
+- 在飞书群中添加一个自定义机器人，获取 Webhook URL。
+- 更新 .env 中的配置：
+  ```
+  #飞书配置
+  FEISHU_ENABLED=1
+  FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/xxx #替换为你的Webhook URL
+  ```
 
 ## 交流
 
