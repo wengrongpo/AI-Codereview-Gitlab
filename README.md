@@ -67,7 +67,7 @@ DEEPSEEK_API_KEY={YOUR_DEEPSEEK_API_KEY}
 DEEPSEEK_API_BASE_URL=https://api.deepseek.com 
 DEEPSEEK_API_MODEL=deepseek-chat
 
-#OllaMA settings
+#Ollama settings
 OLLAMA_API_BASE_URL=http://127.0.0.1:11434
 OLLAMA_API_MODEL=deepseek-r1:latest
 
@@ -110,7 +110,7 @@ GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 ```
 services:
   flask-app:
-    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.4
+    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.5
     ports:
       - "5001:5001"
     environment:
