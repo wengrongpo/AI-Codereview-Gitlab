@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 from core.llm.client.base import BaseClient
 from core.llm.client.deepseek import DeepSeekClient
+from core.llm.client.ollama_client import OllamaClient
 from core.llm.client.openai import OpenAIClient
 from core.llm.client.zhipuai import ZhipuAIClient
 
@@ -16,7 +17,8 @@ class Factory:
         chat_model_providers = {
             'zhipuai': lambda: ZhipuAIClient(),
             'openai': lambda: OpenAIClient(),
-            'deepseek': lambda: DeepSeekClient()
+            'deepseek': lambda: DeepSeekClient(),
+            'ollama': lambda : OllamaClient()
         }
 
         provider_func = chat_model_providers.get(provider)

@@ -4,7 +4,7 @@
 
 本项目是一个基于大模型的自动化代码审查工具，帮助开发团队在代码合并或提交时，快速进行智能化的 Code Review，提升代码质量和开发效率。
 
-- 大模型支持DeepSeek、ZhipuAI和OpenAI;
+- 大模型支持DeepSeek、ZhipuAI、OpenAI和Ollama。
 - 消息推送支持钉钉、企业微信和飞书;
 
 ## 功能
@@ -51,7 +51,7 @@ mkdir log
 #服务端口
 SERVER_PORT=5001
 
-#大模型供应商配置,支持 zhipuai , openai or deepseek
+#大模型供应商配置,支持 zhipuai , openai , deepseek or ollama
 LLM_PROVIDER=deepseek
 
 #ZhipuAI
@@ -66,6 +66,10 @@ OPENAI_API_MODEL=gpt-4o-mini
 DEEPSEEK_API_KEY={YOUR_DEEPSEEK_API_KEY}
 DEEPSEEK_API_BASE_URL=https://api.deepseek.com 
 DEEPSEEK_API_MODEL=deepseek-chat
+
+#OllaMA settings
+OLLAMA_API_BASE_URL=http://127.0.0.1:11434
+OLLAMA_API_MODEL=deepseek-r1:latest
 
 #支持review的文件类型(未配置的文件类型不会被审查)
 SUPPORTED_EXTENSIONS=.java,.py,.php,.yml
