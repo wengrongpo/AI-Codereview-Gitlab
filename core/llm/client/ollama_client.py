@@ -12,7 +12,7 @@ from core.llm.types import NotGiven, NOT_GIVEN
 class OllamaClient(BaseClient):
     def __init__(self, api_key: str = None):
         self.default_model = self.default_model = os.getenv("OLLAMA_API_MODEL", "deepseek-r1-8k:14b")
-        self.base_url = os.getenv("OLLAMA_API_URL", "http://127.0.0.1:11434")
+        self.base_url = os.getenv("OLLAMA_API_BASE_URL", "http://127.0.0.1:11434")
         self.client = Client(
             host=self.base_url,
         )
