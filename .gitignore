@@ -1,9 +1,11 @@
 .DS_Store
 venv/
-log/
 test/
 .idea/
 docker
+
+log/*
+!log/
 
 .env
 .pyc

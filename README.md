@@ -36,16 +36,16 @@
 
 ### 方案一：Docker 部署
 
-**1. 创建目录和配置文件**
+**1. Clone 项目**
 
 ```bash
-mkdir log
+git clone https://github.com/sunmh207/AI-Codereview-Gitlab.git
+cd AI-Codereview-Gitlab
 ```
 
-<h5 id="env"></h5>
 **2. 创建.env文件**
 
-根据实际情况，配置 .env 文件，内容如下：
+复制 .env.dist 文件到 .env 文件，并根据实际情况修改, 部分内容如下：
 
 ```bash
 #服务端口
@@ -54,74 +54,23 @@ SERVER_PORT=5001
 #大模型供应商配置,支持 zhipuai , openai , deepseek or ollama
 LLM_PROVIDER=deepseek
 
-#ZhipuAI
-ZHIPUAI_API_KEY={YOUR_ZHIPUAI_API_KEY}
-ZHIPUAI_API_MODEL=GLM-4-Flash
-
-#OpenAI
-OPENAI_API_KEY={YOUR_OPENAI_API_KEY}
-OPENAI_API_MODEL=gpt-4o-mini
-
 #DeepSeek
 DEEPSEEK_API_KEY={YOUR_DEEPSEEK_API_KEY}
-DEEPSEEK_API_BASE_URL=https://api.deepseek.com 
-DEEPSEEK_API_MODEL=deepseek-chat
-
-#Ollama settings
-OLLAMA_API_BASE_URL=http://127.0.0.1:11434
-OLLAMA_API_MODEL=deepseek-r1:latest
 
 #支持review的文件类型(未配置的文件类型不会被审查)
 SUPPORTED_EXTENSIONS=.java,.py,.php,.yml
 #提交给大模型的最长字符数,超出的部分会截断,防止大模型处理内容过长或Token消耗过多
 REVIEW_MAX_LENGTH=20000
 
-#钉钉配置
-#0不发送钉钉消息，1发送钉钉消息
+#钉钉消息推送: 0不发送钉钉消息,1发送钉钉消息
 DINGTALK_ENABLED=0
 DINGTALK_WEBHOOK_URL={YOUR_WDINGTALK_WEBHOOK_URL}
-
-#企业微信配置
-WECOM_ENABLED=0
-WECOM_WEBHOOK_URL={YOUR_WECOM_WEBHOOK_URL}
-
-#飞书配置
-FEISHU_ENABLED=0
-FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/xxx
-
-#日志配置
-LOG_FILE=log/app.log
-LOG_MAX_BYTES=10485760
-LOG_BACKUP_COUNT=3
-LOG_LEVEL=DEBUG
-
-#工作日报配置
-#日报源数据存放位置
-REPORT_DATA_DIR=log
-#日报生成定时器, 默认周一至周五每天18:00生成
-REPORT_CRONTAB_EXPRESSION=0 18 * * 1-5
 
 #Gitlab配置
 GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 ```
 
-**3. 创建docker-compose.yml文件**
-
-```
-services:
-  flask-app:
-    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.5
-    ports:
-      - "5001:5001"
-    environment:
-      - FLASK_ENV=production
-    volumes:
-      - ./.env:/app/.env
-      - ./log:/app/log
-    restart: unless-stopped
-```
-
-**4. 启动docker容器**
+**3. 启动docker容器**
 
 ```bash
 docker compose up -d 
@@ -150,7 +99,7 @@ pip install -r requirements.txt
 
 **3. 配置环境变量**
 
-同 Docker 部署方案中的 【创建.env文件](#env)
+同 Docker 部署方案中的 【创建.env文件]
 
 **4. 启动服务**
 
