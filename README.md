@@ -99,7 +99,7 @@ pip install -r requirements.txt
 
 **3. 配置环境变量**
 
-同 Docker 部署方案中的 【创建.env文件]
+同 Docker 部署方案中的 【创建.env文件】
 
 **4. 启动服务**
 
