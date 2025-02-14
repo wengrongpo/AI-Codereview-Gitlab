@@ -82,7 +82,6 @@ docker-compose up -d
 
 **1. 获取源码**
 
-从 GitHub 仓库克隆项目到服务器：
 
 ```bash
 git clone https://github.com/sunmh207/AI-Codereview-Gitlab.git
