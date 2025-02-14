@@ -1,4 +1,5 @@
 import json
+import time
 
 import requests
 
@@ -36,19 +37,33 @@ class MergeRequestHandler:
             logger.warn(f"Invalid event type: {self.event_type}. Only 'merge_request' event is supported now.")
             return []
 
-        # 调用 GitLab API 获取 Merge Request 的 changes
-        url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/merge_requests/{self.merge_request_iid}/changes"
-        headers = {
-            'Private-Token': self.gitlab_token
-        }
-        response = requests.get(url, headers=headers)
-        logger.debug(f"Get changes response from gitlab: {response.status_code}, {response.text}")
-        # 检查请求是否成功
-        if response.status_code == 200:
-            return response.json().get('changes', [])
-        else:
-            logger.warn(f"Failed to get changes: {response.status_code}, {response.text}")
-            return []
+        # Gitlab merge request changes API可能存在延迟，多次尝试
+        max_retries = 3  # 最大重试次数
+        retry_delay = 10  # 重试间隔时间（秒）
+        for attempt in range(max_retries):
+            # 调用 GitLab API 获取 Merge Request 的 changes
+            url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/merge_requests/{self.merge_request_iid}/changes"
+            headers = {
+                'Private-Token': self.gitlab_token
+            }
+            response = requests.get(url, headers=headers)
+            logger.debug(
+                f"Get changes response from gitlab (attempt {attempt + 1}): {response.status_code}, {response.text}")
+            # 检查请求是否成功
+            if response.status_code == 200:
+                changes = response.json().get('changes', [])
+                if changes:
+                    return changes
+                else:
+                    logger.info(
+                        f"Changes is empty, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+            else:
+                logger.warn(f"Failed to get changes: {response.status_code}, {response.text}")
+                return []
+
+        logger.warning(f"Max retries ({max_retries}) reached. Changes is still empty.")
+        return []  # 达到最大重试次数后返回空列表
 
     def get_merge_request_commits(self) -> list:
         # 检查是否为 Merge Request Hook 事件
@@ -157,5 +172,3 @@ class PushHandler:
         else:
             logger.error(f"Failed to add comment: {response.status_code}")
             logger.error(response.json())
-
-
