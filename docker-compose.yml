@@ -1,6 +1,6 @@
 services:
   flask-app:
-    image: registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.5
+    image: crpi-cbezupzhiv8xfeaf.cn-guangzhou.personal.cr.aliyuncs.com/ppandocker/ai-codereview-gitlab:1.0.5.2
     ports:
       - "5001:5001"
     environment:
@@ -9,3 +9,4 @@ services:
       - ./.env:/app/.env
       - ./log:/app/log
     restart: unless-stopped
+    platform: linux/amd64
