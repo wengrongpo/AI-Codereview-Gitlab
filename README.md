@@ -36,16 +36,9 @@
 
 ### 方案一：Docker 部署
 
-**1. Clone 项目**
+**1. 创建.env文件**
 
-```bash
-git clone https://github.com/sunmh207/AI-Codereview-Gitlab.git
-cd AI-Codereview-Gitlab
-```
-
-**2. 创建.env文件**
-
-复制 .env.dist 文件到 .env 文件，并根据实际情况修改, 部分内容如下：
+复制本项目 .env.dist 文件内容到本地 .env 文件，并根据实际情况修改, 部分内容如下：
 
 ```bash
 #服务端口
@@ -70,12 +63,13 @@ DINGTALK_WEBHOOK_URL={YOUR_WDINGTALK_WEBHOOK_URL}
 GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 ```
 
-**3. 启动docker容器**
+**2. 启动docker容器**
 
 ```bash
-docker compose up -d 
-或
-docker-compose up -d
+docker run -d --name codereview-gitlab \
+  -p 5001:5001 \
+  -v $(pwd)/.env:/app/.env \
+  registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.6
 ```
 
 ### 方案二：本地Python环境部署
