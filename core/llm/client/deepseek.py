@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 from openai import OpenAI
+from biz.utils.log import logger
 
 from core.llm.client.base import BaseClient
 from core.llm.types import NotGiven, NOT_GIVEN
@@ -24,9 +25,27 @@ class DeepSeekClient(BaseClient):
                     messages: List[Dict[str, str]],
                     model: Optional[str] | NotGiven = NOT_GIVEN,
                     ) -> str:
-        model = model or self.default_model
-        completion = self.client.chat.completions.create(
-            model=model,
-            messages=messages,
-        )
-        return completion.choices[0].message.content
+        try:
+            model = model or self.default_model
+            logger.debug(f"Sending request to DeepSeek API. Model: {model}, Messages: {messages}")
+            
+            completion = self.client.chat.completions.create(
+                model=model,
+                messages=messages
+            )
+            
+            if not completion or not completion.choices:
+                logger.error("Empty response from DeepSeek API")
+                return "AI服务返回为空，请稍后重试"
+                
+            return completion.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"DeepSeek API error: {str(e)}")
+            # 检查是否是认证错误
+            if "401" in str(e):
+                return "DeepSeek API认证失败，请检查API密钥是否正确"
+            elif "404" in str(e):
+                return "DeepSeek API接口未找到，请检查API地址是否正确"
+            else:
+                return f"调用DeepSeek API时出错: {str(e)}"
