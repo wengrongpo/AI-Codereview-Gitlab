@@ -48,7 +48,8 @@ class MergeRequestHandler:
             }
             response = requests.get(url, headers=headers)
             logger.debug(
-                f"Get changes response from gitlab (attempt {attempt + 1}): {response.status_code}, {response.text}")
+                f"Get changes response from GitLab (attempt {attempt + 1}): {response.status_code}, {response.text}, URL: {url}")
+
             # 检查请求是否成功
             if response.status_code == 200:
                 changes = response.json().get('changes', [])
@@ -56,10 +57,10 @@ class MergeRequestHandler:
                     return changes
                 else:
                     logger.info(
-                        f"Changes is empty, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
+                        f"Changes is empty, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries}), URL: {url}")
                     time.sleep(retry_delay)
             else:
-                logger.warn(f"Failed to get changes: {response.status_code}, {response.text}")
+                logger.warn(f"Failed to get changes from GitLab (URL: {url}): {response.status_code}, {response.text}")
                 return []
 
         logger.warning(f"Max retries ({max_retries}) reached. Changes is still empty.")
