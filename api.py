@@ -185,10 +185,12 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
             # 获取Merge Request的changes
             changes = handler.get_merge_request_changes()
             logger.info('changes: %s', changes)
+            changes = filter_changes(changes)
             if not changes:
                 logger.info('未检测到有关代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
                 return jsonify({
                     'message': 'No code modifications were detected, the modified file may not satisfy SUPPORTED_EXTENSIONS.'}), 500
+
             # 获取Merge Request的commits
             commits = handler.get_merge_request_commits()
             if not commits:
@@ -197,7 +199,7 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
 
             # review 代码
             commits_text = ';'.join(commit['title'] for commit in commits)
-            review_result = review_code(str(filter_changes(changes)), commits_text)
+            review_result = review_code(str(changes), commits_text)
 
             # 将review结果提交到Gitlab的 notes
             handler.add_merge_request_notes(f'Auto Review Result: {review_result}')
@@ -229,12 +231,13 @@ def filter_changes(changes: list):
     '''
     过滤数据，只保留支持的文件类型以及必要的字段信息
     '''
+    filter_deleted_files_changes = [change for change in changes if change.get("deleted_file") == False]
     # 从环境变量中获取支持的文件扩展名
     SUPPORTED_EXTENSIONS = os.getenv('SUPPORTED_EXTENSIONS', '.java,.py,.php').split(',')
     # 过滤 `new_path` 以支持的扩展名结尾的元素, 仅保留diff和new_path字段
     filtered_changes = [
         {'diff': item['diff'], 'new_path': item['new_path']}
-        for item in changes
+        for item in filter_deleted_files_changes
         if any(item.get('new_path', '').endswith(ext) for ext in SUPPORTED_EXTENSIONS)
     ]
     return filtered_changes
