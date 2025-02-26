@@ -100,7 +100,7 @@ class MergeRequestHandler:
             logger.info("Note successfully added to merge request.")
         else:
             logger.error(f"Failed to add note: {response.status_code}")
-            logger.error(response.json())
+            logger.error(response.text)
 
 
 class PushHandler:
@@ -172,7 +172,7 @@ class PushHandler:
             logger.info("Comment successfully added to push commit.")
         else:
             logger.error(f"Failed to add comment: {response.status_code}")
-            logger.error(response.json())
+            logger.error(response.text)
 
     def get_push_changes(self) -> list:
         # 检查是否为 Push 事件
@@ -187,6 +187,18 @@ class PushHandler:
         headers = {
             'Private-Token': self.gitlab_token
         }
+
+        # 优先尝试compare API获取变更
+        before = self.webhook_data.get('before', '')
+        after = self.webhook_data.get('after', '')
+        if before and after:
+            url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/repository/compare?from={before}&to={after}"
+            response = requests.get(url, headers=headers)
+            logger.debug(f"Get changes response from GitLab for push event: {response.status_code}, {response.text}")
+            if response.status_code == 200:
+                return response.json().get('diffs', [])
+            else:
+                logger.warn(f"Failed to get changes for push event: {response.status_code}, {response.text}")
         all_changes = []
         # 遍历所有提交
         for commit in self.commit_list:
