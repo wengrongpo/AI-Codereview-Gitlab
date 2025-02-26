@@ -173,3 +173,39 @@ class PushHandler:
         else:
             logger.error(f"Failed to add comment: {response.status_code}")
             logger.error(response.json())
+
+    def get_push_changes(self) -> list:
+        # 检查是否为 Push 事件
+        if self.event_type != 'push':
+            logger.warn(f"Invalid event type: {self.event_type}. Only 'push' event is supported now.")
+            return []
+
+        # 如果没有提交，返回空列表
+        if not self.commit_list:
+            logger.info("No commits found in push event.")
+            return []
+        headers = {
+            'Private-Token': self.gitlab_token
+        }
+        all_changes = []
+        # 遍历所有提交
+        for commit in self.commit_list:
+            commit_id = commit.get('id')
+            if not commit_id:
+                logger.error("Commit ID not found.")
+                continue
+
+            # 调用 GitLab API 获取每个提交的变更
+            url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/repository/commits/{commit_id}/diff"
+
+            response = requests.get(url, headers=headers)
+            logger.debug(f"Get changes response from GitLab for commit {commit_id}: {response.status_code}, {response.text}")
+
+            # 检查请求是否成功
+            if response.status_code == 200:
+                for diff in response.json():
+                    all_changes.append(diff)
+            else:
+                logger.warn(f"Failed to get changes for commit {commit_id}: {response.status_code}, {response.text}")
+
+        return all_changes
