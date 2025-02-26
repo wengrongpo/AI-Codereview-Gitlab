@@ -171,6 +171,8 @@ def handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             commits_text = ';'.join(commit.get('message', '').strip() for commit in commits)
 
             review_result = review_code(str(filter_changes(changes)), commits_text)
+            # 将review结果提交到Gitlab的 notes
+            handler.add_push_notes(f'Auto Review Result: {review_result}')
             dingtalk_msg += (
                 f"- **AI Review 结果:** {review_result}"
             )
