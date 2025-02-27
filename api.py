@@ -159,7 +159,23 @@ def handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
                 f"- **时间**: {timestamp}\n"
                 f"- [查看提交详情]({url})\n\n\n\n"
             )
+        # review 代码
+        PUSH_REVIEW_ENABLED = os.environ.get('PUSH_REVIEW_ENABLED', '0') == '1'
+        if PUSH_REVIEW_ENABLED:
+            # 获取PUSH的changes
+            changes = handler.get_push_changes()
+            logger.info('changes: %s', changes)
+            if not changes:
+                logger.info('未检测到PUSH代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
 
+            commits_text = ';'.join(commit.get('message', '').strip() for commit in commits)
+
+            review_result = review_code(str(filter_changes(changes)), commits_text)
+            # 将review结果提交到Gitlab的 notes
+            handler.add_push_notes(f'Auto Review Result: {review_result}')
+            dingtalk_msg += (
+                f"- **AI Review 结果:** {review_result}"
+            )
         send_notification(content=dingtalk_msg, msg_type='markdown',
                           title=f"{webhook_data['project']['name']} Push Event")
     except Exception as e:

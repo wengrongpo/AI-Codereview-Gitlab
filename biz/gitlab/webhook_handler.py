@@ -100,7 +100,7 @@ class MergeRequestHandler:
             logger.info("Note successfully added to merge request.")
         else:
             logger.error(f"Failed to add note: {response.status_code}")
-            logger.error(response.json())
+            logger.error(response.text)
 
 
 class PushHandler:
@@ -172,4 +172,52 @@ class PushHandler:
             logger.info("Comment successfully added to push commit.")
         else:
             logger.error(f"Failed to add comment: {response.status_code}")
-            logger.error(response.json())
+            logger.error(response.text)
+
+    def get_push_changes(self) -> list:
+        # 检查是否为 Push 事件
+        if self.event_type != 'push':
+            logger.warn(f"Invalid event type: {self.event_type}. Only 'push' event is supported now.")
+            return []
+
+        # 如果没有提交，返回空列表
+        if not self.commit_list:
+            logger.info("No commits found in push event.")
+            return []
+        headers = {
+            'Private-Token': self.gitlab_token
+        }
+
+        # 优先尝试compare API获取变更
+        before = self.webhook_data.get('before', '')
+        after = self.webhook_data.get('after', '')
+        if before and after:
+            url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/repository/compare?from={before}&to={after}"
+            response = requests.get(url, headers=headers)
+            logger.debug(f"Get changes response from GitLab for push event: {response.status_code}, {response.text}")
+            if response.status_code == 200:
+                return response.json().get('diffs', [])
+            else:
+                logger.warn(f"Failed to get changes for push event: {response.status_code}, {response.text}")
+        all_changes = []
+        # 遍历所有提交
+        for commit in self.commit_list:
+            commit_id = commit.get('id')
+            if not commit_id:
+                logger.error("Commit ID not found.")
+                continue
+
+            # 调用 GitLab API 获取每个提交的变更
+            url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/repository/commits/{commit_id}/diff"
+
+            response = requests.get(url, headers=headers)
+            logger.debug(f"Get changes response from GitLab for commit {commit_id}: {response.status_code}, {response.text}")
+
+            # 检查请求是否成功
+            if response.status_code == 200:
+                for diff in response.json():
+                    all_changes.append(diff)
+            else:
+                logger.warn(f"Failed to get changes for commit {commit_id}: {response.status_code}, {response.text}")
+
+        return all_changes
