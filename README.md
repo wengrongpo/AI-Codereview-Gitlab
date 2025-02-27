@@ -69,7 +69,7 @@ GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 docker run -d --name codereview-gitlab \
   -p 5001:5001 \
   -v $(pwd)/.env:/app/.env \
-  registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.7
+  registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.8
 ```
 
 ### 方案二：本地Python环境部署
