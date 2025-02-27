@@ -199,25 +199,6 @@ class PushHandler:
                 return response.json().get('diffs', [])
             else:
                 logger.warn(f"Failed to get changes for push event: {response.status_code}, {response.text}")
-        all_changes = []
-        # 遍历所有提交
-        for commit in self.commit_list:
-            commit_id = commit.get('id')
-            if not commit_id:
-                logger.error("Commit ID not found.")
-                continue
-
-            # 调用 GitLab API 获取每个提交的变更
-            url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/repository/commits/{commit_id}/diff"
-
-            response = requests.get(url, headers=headers)
-            logger.debug(f"Get changes response from GitLab for commit {commit_id}: {response.status_code}, {response.text}")
-
-            # 检查请求是否成功
-            if response.status_code == 200:
-                for diff in response.json():
-                    all_changes.append(diff)
-            else:
-                logger.warn(f"Failed to get changes for commit {commit_id}: {response.status_code}, {response.text}")
-
-        return all_changes
+                return []
+        else:
+            return []
