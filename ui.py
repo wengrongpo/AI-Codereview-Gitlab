@@ -8,7 +8,7 @@ from biz.service.review_service import ReviewService
 
 # 获取数据函数
 def get_data_by_date(authors=None, updated_at_gte=None, updated_at_lte=None):
-    df = ReviewService.get_mr_review_logs(authors=authors, updated_at_gte=updated_at_gte, updated_at_lte=updated_at_lte)
+    df = ReviewService().get_mr_review_logs(authors=authors, updated_at_gte=updated_at_gte, updated_at_lte=updated_at_lte)
 
     if "updated_at" in df.columns:
         df["updated_at"] = df["updated_at"].apply(
