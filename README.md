@@ -70,6 +70,7 @@ docker run -d --name codereview-gitlab \
 **3. 验证服务**
 
 访问 http://your-server-ip:5001 显示 "The code review server is running." 说明服务启动成功。
+
 访问 http://your-server-ip:5002 看到一个审查日志页面，说明 Dashboard 启动成功。
 
 ### 方案二：本地Python环境部署
