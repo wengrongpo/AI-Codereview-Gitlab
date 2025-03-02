@@ -42,7 +42,8 @@
 
 ```bash
 #服务端口
-SERVER_PORT=5001
+API_SERVER_PORT=5001
+UI_SERVER_PORT=5002
 
 #大模型供应商配置,支持 zhipuai , openai , deepseek or ollama
 LLM_PROVIDER=deepseek
@@ -68,6 +69,7 @@ GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 ```bash
 docker run -d --name codereview-gitlab \
   -p 5001:5001 \
+  -p 5002:5002 \
   -v $(pwd)/.env:/app/.env \
   registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.0.8
 ```

@@ -1,28 +1,30 @@
 # 使用官方的 Python 基础镜像
-FROM python:3.10-slim
+FROM python:3.10
 
 # 设置工作目录
 WORKDIR /app
 
-# 将 requirements.txt 文件复制到容器中
-COPY ../requirements.txt .
-
-# 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 复制项目代码
+# 复制项目文件&创建必要的文件夹
+COPY requirements.txt .
 COPY biz /app/biz
 COPY core /app/core
 COPY api.py /app/api.py
-
-# 创建日志目录
+COPY ui.py /app/ui.py
+COPY prompt_templates.yml /app/prompt_templates.yml
 RUN mkdir -p /app/log
+RUN mkdir -p /app/data
 
-# 暴露 Flask 默认端口
-EXPOSE 5001
+# 安装 supervisord 作为进程管理工具
+RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
 
-# 设置环境变量（可选）
-ENV FLASK_ENV=production
+# 复制 supervisord 配置文件
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# 启动命令
-CMD ["python", "api.py"]
+# 安装依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 暴露 Flask 和 Streamlit 的端口
+EXPOSE 5000 8501
+
+# 使用 supervisord 作为启动命令
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
