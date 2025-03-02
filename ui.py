@@ -73,4 +73,23 @@ def highlight_score(val):
 
 df = df.style.map(highlight_score, subset=["score"])
 
+# 定义每一列的最小宽度
+column_widths = {
+    1: 30,  # A列
+    2: 120,  # B列
+    3: 100,  # C列
+    4: 120,  # D列
+    5: 120,  # E列
+    6: 80,  # F列
+    8: 50,  # H列
+    9: 50  # I列
+}
+# 生成 CSS 代码
+css = "<style>table { width: 100%; }"
+for col, width in column_widths.items():
+    css += f"th:nth-child({col}), td:nth-child({col}) {{ min-width: {width}px; }}\n"
+css += "</style>"
+# 应用 CSS
+st.markdown(css, unsafe_allow_html=True)
+
 st.table(df)
