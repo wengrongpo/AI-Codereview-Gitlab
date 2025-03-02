@@ -22,6 +22,13 @@ load_dotenv()
 api_app = Flask(__name__)
 
 
+@api_app.route('/')
+def home():
+    return """<h2>The code review server is running.</h2>
+              <p>开源地址：<a href="https://github.com/sunmh207/AI-Codereview-Gitlab" target="_blank">
+              https://github.com/sunmh207/AI-Codereview-Gitlab</a></p>"""
+
+
 @api_app.route('/review/daily_report', methods=['GET'])
 def daily_report():
     data_dir = os.getenv('REPORT_DATA_DIR', './')

@@ -62,9 +62,9 @@ df = pd.DataFrame(data)
 
 def highlight_score(val):
     """根据分数高低设置单元格背景颜色"""
-    if val >= 80:
+    if val >= 85:
         color = "green"
-    elif 60 <= val < 80:
+    elif 70 <= val < 85:
         color = "orange"
     else:
         color = "red"
