@@ -71,6 +71,6 @@ def highlight_score(val):
     return f"background-color: {color}; color: white; text-align: center;"
 
 
-df = df.style.applymap(highlight_score, subset=["score"])
+df = df.style.map(highlight_score, subset=["score"])
 
 st.table(df)
