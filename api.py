@@ -10,19 +10,26 @@ from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 
-from biz.ai.code_reviewer import CodeReviewer
-from biz.ai.reporter import Reporter
+from biz.entity.review_entity import MergeRequestReviewEntity, PushReviewEntity
+from biz.event.event_manager import event_manager
 from biz.gitlab.webhook_handler import MergeRequestHandler, PushHandler
-from biz.utils.dingtalk import DingTalkNotifier
-from biz.utils.feishu import FeishuNotifier
+from biz.utils.code_reviewer import CodeReviewer
+from biz.utils.im import im_notifier
 from biz.utils.log import logger
-from biz.utils.wecom import WeComNotifier
+from biz.utils.reporter import Reporter
 
 load_dotenv()
-app = Flask(__name__)
+api_app = Flask(__name__)
 
 
-@app.route('/review/daily_report', methods=['GET'])
+@api_app.route('/')
+def home():
+    return """<h2>The code review server is running.</h2>
+              <p>开源地址：<a href="https://github.com/sunmh207/AI-Codereview-Gitlab" target="_blank">
+              https://github.com/sunmh207/AI-Codereview-Gitlab</a></p>"""
+
+
+@api_app.route('/review/daily_report', methods=['GET'])
 def daily_report():
     data_dir = os.getenv('REPORT_DATA_DIR', './')
     data_file = "push_" + datetime.now().strftime("%Y-%m-%d") + ".json"
@@ -57,7 +64,7 @@ def daily_report():
     commits = sorted(unique_commits.values(), key=lambda x: x["author"])
     report_txt = Reporter().generate_report(json.dumps(commits))
     # 发钉钉消息
-    send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
+    im_notifier.send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
     return json.dumps(report_txt, ensure_ascii=False, indent=4)
 
 
@@ -87,7 +94,7 @@ atexit.register(lambda: scheduler.shutdown())
 
 
 # 处理 GitLab Merge Request Webhook
-@app.route('/review/webhook', methods=['POST'])
+@api_app.route('/review/webhook', methods=['POST'])
 def handle_webhook():
     # 获取请求的JSON数据
     if request.is_json:
@@ -109,13 +116,13 @@ def handle_webhook():
         # 处理Merge Request Hook
         if event_type == 'Merge Request Hook':
             # 创建一个新进程进行异步处理
-            process = Process(target=handle_merge_request_event, args=(data, gitlab_token, gitlab_url))
+            process = Process(target=__handle_merge_request_event, args=(data, gitlab_token, gitlab_url))
             process.start()
             # 立马返回响应
             return jsonify({'message': 'Request received, will process asynchronously.'}), 200
         elif event_type == 'Push Hook':
             # 创建一个新进程进行异步处理
-            process = Process(target=handle_push_event, args=(data, gitlab_token, gitlab_url))
+            process = Process(target=__handle_push_event, args=(data, gitlab_token, gitlab_url))
             process.start()
             # 立马返回响应
             return jsonify({'message': 'Request received, will process asynchronously.'}), 200
@@ -125,42 +132,18 @@ def handle_webhook():
         return jsonify({'message': 'Invalid data format'}), 400
 
 
-def handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
+def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
     try:
         handler = PushHandler(webhook_data, gitlab_token, gitlab_url)
         logger.info('Push Hook event received')
         commits = handler.get_push_commits()
         if not commits:
             logger.error('Failed to get commits')
-            return jsonify({'message': 'Failed to get commits'}), 500
-        # 记录到数据文件中
-        commits_filtered = [{'message': commit['message'], 'author': commit['author'], 'timestamp': commit['timestamp']}
-                            for commit in commits]
-        data_dir = os.getenv('REPORT_DATA_DIR', './')
-        push_data_file = "push_" + datetime.now().strftime("%Y-%m-%d") + ".json"
-        push_file_path = os.path.join(data_dir, push_data_file)
-        with open(push_file_path, 'a', encoding='utf-8') as f:
-            for commit in commits_filtered:
-                f.write(json.dumps(commit, ensure_ascii=False) + "\n")
+            return
 
-        # 构建 Markdown 格式的钉钉消息
-        dingtalk_msg = f"### 🚀 {webhook_data['project']['name']}: Push\n\n"
-        dingtalk_msg += "#### 提交记录:\n"
-
-        for commit in commits:
-            message = commit.get('message', '').strip()
-            author = commit.get('author', 'Unknown Author')
-            timestamp = commit.get('timestamp', '')
-            url = commit.get('url', '#')
-
-            dingtalk_msg += (
-                f"- **提交信息**: {message}\n"
-                f"- **提交者**: {author}\n"
-                f"- **时间**: {timestamp}\n"
-                f"- [查看提交详情]({url})\n\n\n\n"
-            )
-        # review 代码
+            # review 代码
         PUSH_REVIEW_ENABLED = os.environ.get('PUSH_REVIEW_ENABLED', '0') == '1'
+        review_result = None
         if PUSH_REVIEW_ENABLED:
             # 获取PUSH的changes
             changes = handler.get_push_changes()
@@ -173,18 +156,24 @@ def handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             review_result = review_code(str(filter_changes(changes)), commits_text)
             # 将review结果提交到Gitlab的 notes
             handler.add_push_notes(f'Auto Review Result: {review_result}')
-            dingtalk_msg += (
-                f"- **AI Review 结果:** {review_result}"
-            )
-        send_notification(content=dingtalk_msg, msg_type='markdown',
-                          title=f"{webhook_data['project']['name']} Push Event")
+
+        event_manager['push_reviewed'].send(PushReviewEntity(
+            project_name=webhook_data['project']['name'],
+            author=webhook_data['user_username'],
+            branch=webhook_data['project']['default_branch'],
+            updated_at=int(datetime.now().timestamp()),  # 当前时间
+            commits=commits,
+            score=CodeReviewer.parse_review_score(review_text=review_result),
+            review_result=review_result,
+        ))
+
     except Exception as e:
         error_message = f'服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
-        send_notification(error_message)
+        im_notifier.send_notification(content=error_message)
         logger.error('出现未知错误: %s', error_message)
 
 
-def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
+def __handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
     '''
     处理Merge Request Hook事件
     :param webhook_data:
@@ -204,14 +193,13 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
             changes = filter_changes(changes)
             if not changes:
                 logger.info('未检测到有关代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
-                return jsonify({
-                    'message': 'No code modifications were detected, the modified file may not satisfy SUPPORTED_EXTENSIONS.'}), 500
+                return
 
             # 获取Merge Request的commits
             commits = handler.get_merge_request_commits()
             if not commits:
                 logger.error('Failed to get commits')
-                return jsonify({'message': 'Failed to get commits'}), 500
+                return
 
             # review 代码
             commits_text = ';'.join(commit['title'] for commit in commits)
@@ -220,26 +208,27 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
             # 将review结果提交到Gitlab的 notes
             handler.add_merge_request_notes(f'Auto Review Result: {review_result}')
 
-            # 构建 Markdown 格式的钉钉消息
-            dingtalk_msg = f"### 🔀 {webhook_data['project']['name']}: Merge Request\n\n"
-            dingtalk_msg += f"#### 合并请求信息:\n"
-
-            dingtalk_msg += (
-                f"- **提交者:** {webhook_data['user']['name']}\n\n"
-                f"- **源分支**: `{webhook_data['object_attributes']['source_branch']}`\n"
-                f"- **目标分支**: `{webhook_data['object_attributes']['target_branch']}`\n"
-                f"- **更新时间**: {webhook_data['object_attributes']['updated_at']}\n"
-                f"- **提交信息:** {commits_text}\n\n"
-                f"- [查看合并详情]({webhook_data['object_attributes']['url']})\n\n"
-                f"- **AI Review 结果:** {review_result}"
+            # dispatch merge_request_reviewed event
+            event_manager['merge_request_reviewed'].send(
+                MergeRequestReviewEntity(
+                    project_name=webhook_data['project']['name'],
+                    author=webhook_data['user']['username'],
+                    source_branch=webhook_data['object_attributes']['source_branch'],
+                    target_branch=webhook_data['object_attributes']['target_branch'],
+                    updated_at=int(datetime.now().timestamp()),
+                    commits=commits,
+                    score=CodeReviewer.parse_review_score(review_text=review_result),
+                    url=webhook_data['object_attributes']['url'],
+                    review_result=review_result
+                )
             )
-            send_notification(content=dingtalk_msg, msg_type='markdown', title='Merge Request Review')
+
         else:
             logger.info(f"Merge Request Hook event, action={handler.action}, ignored.")
 
     except Exception as e:
         error_message = f'AI Code Review 服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
-        send_notification(error_message)
+        im_notifier.send_notification(content=error_message)
         logger.error('出现未知错误: %s', error_message)
 
 
@@ -259,41 +248,6 @@ def filter_changes(changes: list):
     return filtered_changes
 
 
-# 分文件review代码
-# def review_code(data: dict):
-#     changes = data.get('changes', [])
-#
-#     # 如果超长，取前REVIEW_MAX_LENGTH字符
-#     review_max_length = int(os.getenv('REVIEW_MAX_LENGTH', 5000))
-#     review_result = []
-#     # 如果changes为空,打印日志
-#     if not changes:
-#         logger.info('代码为空, data = %', str(data))
-#         return '代码为空'
-#
-#     for change in changes:
-#         new_path = change.get('new_path', '')
-#         diff = change.get('diff', '')
-#         parser = GitDiffParser(diff)
-#
-#         old_code = parser.get_old_code()
-#         new_code = parser.get_new_code()
-#
-#         content = {
-#             '文件名': new_path,
-#             '修改前代码': old_code,
-#             '修改后代码': new_code,
-#         }
-#         content_str = str(content)
-#
-#         if len(content_str) > review_max_length:
-#             content_str = content_str[:review_max_length]
-#             logger.info(f'文本超长，截段后content: {content_str}')
-#
-#         review_result.append(CodeReviewer().review_code(content_str))
-#     return str(review_result)
-
-# def review_code(data: dict):
 def review_code(changes_text: str, commits_text: str = '') -> str:
     # 如果超长，取前REVIEW_MAX_LENGTH字符
     review_max_length = int(os.getenv('REVIEW_MAX_LENGTH', 5000))
@@ -309,27 +263,6 @@ def review_code(changes_text: str, commits_text: str = '') -> str:
     return CodeReviewer().review_code(changes_text, commits_text)
 
 
-def send_notification(content, msg_type='text', title="通知", is_at_all=False):
-    """
-    发送通知消息到配置的平台(钉钉和企业微信)
-    :param content: 消息内容
-    :param msg_type: 消息类型，支持text和markdown
-    :param title: 消息标题(markdown类型时使用)
-    :param is_at_all: 是否@所有人
-    """
-    # 钉钉推送
-    notifier = DingTalkNotifier()
-    notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all)
-
-    # 企业微信推送
-    wecom_notifier = WeComNotifier()
-    wecom_notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all)
-
-    # 飞书推送
-    feishu_notifier = FeishuNotifier()
-    feishu_notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all)
-
-
 if __name__ == '__main__':
     port = int(os.environ.get('SERVER_PORT', 5001))
-    app.run(host='0.0.0.0', port=port)
+    api_app.run(host='0.0.0.0', port=port)

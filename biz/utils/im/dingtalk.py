@@ -7,7 +7,6 @@ import time
 import urllib.parse
 
 import requests
-from dotenv import load_dotenv
 
 from biz.utils.log import logger
 
