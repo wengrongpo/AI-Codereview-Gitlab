@@ -20,9 +20,6 @@ def get_data_by_date(authors=None, updated_at_gte=None, updated_at_lte=None):
             if isinstance(ts, (int, float)) else ts
         )
 
-    if "url" in df.columns:
-        df["url"] = df["url"].apply(lambda x: f"[查看]({x})" if pd.notna(x) else "")
-
     return df[
         ["project_name", "author", "source_branch", "target_branch", "updated_at", "commit_messages", "score", "url"]]
 
@@ -59,37 +56,18 @@ data = get_data_by_date(authors=authors, updated_at_gte=int(start_datetime.times
                         updated_at_lte=int(end_datetime.timestamp()))
 df = pd.DataFrame(data)
 
-
-def highlight_score(val):
-    """根据分数高低设置单元格背景颜色"""
-    if val >= 85:
-        color = "green"
-    elif 70 <= val < 85:
-        color = "orange"
-    else:
-        color = "red"
-    return f"background-color: {color}; color: white; text-align: center;"
-
-
-df = df.style.map(highlight_score, subset=["score"])
-
-# 定义每一列的最小宽度
-column_widths = {
-    1: 30,  # A列
-    2: 120,  # B列
-    3: 100,  # C列
-    4: 120,  # D列
-    5: 120,  # E列
-    6: 80,  # F列
-    8: 50,  # H列
-    9: 50  # I列
-}
-# 生成 CSS 代码
-css = "<style>table { width: 100%; }"
-for col, width in column_widths.items():
-    css += f"th:nth-child({col}), td:nth-child({col}) {{ min-width: {width}px; }}\n"
-css += "</style>"
-# 应用 CSS
-st.markdown(css, unsafe_allow_html=True)
-
-st.table(df)
+st.data_editor(
+    df,
+    column_config={
+        "score": st.column_config.ProgressColumn(
+            format="%f",
+            min_value=0,
+            max_value=100,
+        ),
+        "url": st.column_config.LinkColumn(
+            max_chars=100,
+            display_text=r"查看"
+        ),
+    },
+    hide_index=True,
+)
