@@ -159,7 +159,7 @@ def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
                 review_result = review_code(str(changes), commits_text)
                 score = CodeReviewer.parse_review_score(review_text=review_result)
             # 将review结果提交到Gitlab的 notes
-            handler.add_push_notes(f'Auto Review Result: {review_result}')
+            handler.add_push_notes(f'Auto Review Result: \n{review_result}')
 
         event_manager['push_reviewed'].send(PushReviewEntity(
             project_name=webhook_data['project']['name'],
@@ -210,7 +210,7 @@ def __handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_u
             review_result = review_code(str(changes), commits_text)
 
             # 将review结果提交到Gitlab的 notes
-            handler.add_merge_request_notes(f'Auto Review Result: {review_result}')
+            handler.add_merge_request_notes(f'Auto Review Result: \n{review_result}')
 
             # dispatch merge_request_reviewed event
             event_manager['merge_request_reviewed'].send(
