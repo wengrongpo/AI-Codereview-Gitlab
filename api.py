@@ -144,16 +144,20 @@ def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             # review 代码
         PUSH_REVIEW_ENABLED = os.environ.get('PUSH_REVIEW_ENABLED', '0') == '1'
         review_result = None
+        score = 0
         if PUSH_REVIEW_ENABLED:
             # 获取PUSH的changes
             changes = handler.get_push_changes()
             logger.info('changes: %s', changes)
+            changes = filter_changes(changes)
             if not changes:
                 logger.info('未检测到PUSH代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
+            review_result = "关注的文件没有修改"
 
-            commits_text = ';'.join(commit.get('message', '').strip() for commit in commits)
-
-            review_result = review_code(str(filter_changes(changes)), commits_text)
+            if len(changes) > 0:
+                commits_text = ';'.join(commit.get('message', '').strip() for commit in commits)
+                review_result = review_code(str(changes), commits_text)
+                score = CodeReviewer.parse_review_score(review_text=review_result)
             # 将review结果提交到Gitlab的 notes
             handler.add_push_notes(f'Auto Review Result: {review_result}')
 
@@ -163,7 +167,7 @@ def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             branch=webhook_data['project']['default_branch'],
             updated_at=int(datetime.now().timestamp()),  # 当前时间
             commits=commits,
-            score=CodeReviewer.parse_review_score(review_text=review_result),
+            score=score,
             review_result=review_result,
         ))
 
@@ -259,8 +263,10 @@ def review_code(changes_text: str, commits_text: str = '') -> str:
     if len(changes_text) > review_max_length:
         changes_text = changes_text[:review_max_length]
         logger.info(f'文本超长，截段后content: {changes_text}')
-
-    return CodeReviewer().review_code(changes_text, commits_text)
+    review_result = CodeReviewer().review_code(changes_text, commits_text).strip()
+    if review_result.startswith("```markdown") and review_result.endswith("```"):
+        return review_result[11:-3].strip()
+    return review_result
 
 
 if __name__ == '__main__':
