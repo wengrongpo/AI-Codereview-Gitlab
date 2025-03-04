@@ -20,8 +20,20 @@ def get_data_by_date(authors=None, updated_at_gte=None, updated_at_lte=None):
             if isinstance(ts, (int, float)) else ts
         )
 
-    return df[
+    data = df[
         ["project_name", "author", "source_branch", "target_branch", "updated_at", "commit_messages", "score", "url"]]
+    # 将列名替换为中文
+    data.rename(columns={
+        "project_name": "项目名称",
+        "author": "作者",
+        "source_branch": "源分支",
+        "target_branch": "目标分支",
+        "updated_at": "更新时间",
+        "commit_messages": "提交信息",
+        "score": "评分",
+        "url": "链接"
+    }, inplace=True)
+    return data
 
 
 # Streamlit 配置
@@ -46,7 +58,7 @@ data = get_data_by_date(updated_at_gte=int(start_datetime.timestamp()), updated_
 df = pd.DataFrame(data)
 
 # 动态获取 `authors` 选项
-unique_authors = sorted(df["author"].dropna().unique().tolist()) if not df.empty else []
+unique_authors = sorted(df["作者"].dropna().unique().tolist()) if not df.empty else []
 
 with col3:
     authors = st.multiselect("用户名", unique_authors, default=[])
@@ -60,22 +72,21 @@ st.data_editor(
     df,
     use_container_width=True,
     column_config={
-        "score": st.column_config.ProgressColumn(
+        "评分": st.column_config.ProgressColumn(
             format="%f",
             min_value=0,
             max_value=100,
         ),
-        "url": st.column_config.LinkColumn(
+        "链接": st.column_config.LinkColumn(
             max_chars=100,
             display_text=r"查看"
         ),
-    },
-    hide_index=True,
+    }
 )
 
 # 计算统计信息
 total_records = len(df)
-average_score = df["score"].mean() if not df.empty else 0
+average_score = df["评分"].mean() if not df.empty else 0
 
 # 显示统计信息
 st.markdown(f"**总记录数:** {total_records}，**平均分:** {average_score:.2f}")
