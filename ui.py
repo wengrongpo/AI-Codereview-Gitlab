@@ -58,6 +58,7 @@ df = pd.DataFrame(data)
 
 st.data_editor(
     df,
+    use_container_width=True,
     column_config={
         "score": st.column_config.ProgressColumn(
             format="%f",
@@ -71,3 +72,10 @@ st.data_editor(
     },
     hide_index=True,
 )
+
+# 计算统计信息
+total_records = len(df)
+average_score = df["score"].mean() if not df.empty else 0
+
+# 显示统计信息
+st.markdown(f"**总记录数:** {total_records}，**平均分:** {average_score:.2f}")
