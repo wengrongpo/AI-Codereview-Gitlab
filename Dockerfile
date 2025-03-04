@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends supervisor && r
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 暴露 Flask 和 Streamlit 的端口
-EXPOSE 5000 8501
+EXPOSE 5001 5002
 
 # 使用 supervisord 作为启动命令
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
