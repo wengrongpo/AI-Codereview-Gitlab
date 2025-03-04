@@ -16,7 +16,7 @@ def get_data_by_date(authors=None, updated_at_gte=None, updated_at_lte=None):
 
     if "updated_at" in df.columns:
         df["updated_at"] = df["updated_at"].apply(
-            lambda ts: datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            lambda ts: datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
             if isinstance(ts, (int, float)) else ts
         )
 
