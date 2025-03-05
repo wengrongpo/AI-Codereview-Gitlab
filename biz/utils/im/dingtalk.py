@@ -19,25 +19,29 @@ class DingTalkNotifier:
     def _get_webhook_url(self, project_name=None):
         """
         获取项目对应的 Webhook URL
-        :param project_name:
-        :return:
+        :param project_name: 项目名称
+        :return: Webhook URL
+        :raises ValueError: 如果未找到 Webhook URL
         """
+        # 如果未提供 project_name，直接返回默认的 Webhook URL
         if not project_name:
+            if self.default_webhook_url:
+                return self.default_webhook_url
+            else:
+                raise ValueError("未提供项目名称，且未设置默认的钉钉 Webhook URL。")
+
+        # 遍历所有环境变量（忽略大小写），找到项目对应的 Webhook URL
+        target_key = f"DINGTALK_WEBHOOK_URL_{project_name.upper()}"
+        for env_key, env_value in os.environ.items():
+            if env_key.upper() == target_key:
+                return env_value  # 找到匹配项，直接返回
+
+        # 如果未找到匹配的环境变量，降级使用全局的 Webhook URL
+        if self.default_webhook_url:
             return self.default_webhook_url
 
-        # 遍历所有环境变量(忽略大小写)，找到项目对应的 Webhook URL
-        for env_key, env_value in os.environ.items():
-            if env_key.upper() == f"DINGTALK_WEBHOOK_URL_{project_name.upper()}":
-                webhook_url = env_value
-                break
-
-        # 如果未找到，降级使用全局的 Webhook URL
-        if not webhook_url:
-            webhook_url = self.default_webhook_url
-
-        if not webhook_url:
-            raise ValueError(f"No DingTalk webhook URL found for project {project_name}")
-        return webhook_url
+        # 如果既未找到匹配项，也没有默认值，抛出异常
+        raise ValueError(f"未找到项目 '{project_name}' 对应的钉钉Webhook URL，且未设置默认的 Webhook URL。")
 
     def send_message(self, content: str, msg_type='text', title='通知', is_at_all=False, project_name=None):
         if not self.enabled:

@@ -18,8 +18,10 @@ def send_notification(content, msg_type='text', title="通知", is_at_all=False,
 
     # 企业微信推送
     wecom_notifier = WeComNotifier()
-    wecom_notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all)
+    wecom_notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all,
+                                project_name=project_name)
 
     # 飞书推送
     feishu_notifier = FeishuNotifier()
-    feishu_notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all)
+    feishu_notifier.send_message(content=content, msg_type=msg_type, title=title, is_at_all=is_at_all,
+                                 project_name=project_name)
