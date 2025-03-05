@@ -14,34 +14,38 @@ from biz.utils.log import logger
 class DingTalkNotifier:
     def __init__(self, webhook_url=None):
         self.enabled = os.environ.get('DINGTALK_ENABLED', '0') == '1'
-        self.webhook_url = webhook_url or os.environ.get('DINGTALK_WEBHOOK_URL', '')
-        self.secret = os.environ.get('DINGTALK_SECRET', None)
+        self.default_webhook_url = webhook_url or os.environ.get('DINGTALK_WEBHOOK_URL')
 
-    def _generate_signature(self):
-        timestamp = str(round(time.time() * 1000))
-        secret_enc = self.secret.encode('utf-8')
-        string_to_sign = f'{timestamp}\n{self.secret}'
-        string_to_sign_enc = string_to_sign.encode('utf-8')
-        hmac_code = hmac.new(secret_enc, string_to_sign_enc, hashlib.sha256).digest()
-        sign = urllib.parse.quote_plus(base64.b64encode(hmac_code).decode('utf-8'))
-        return timestamp, sign
+    def _get_webhook_url(self, project_name=None):
+        """
+        获取项目对应的 Webhook URL
+        :param project_name:
+        :return:
+        """
+        if not project_name:
+            return self.default_webhook_url
 
-    def _get_post_url(self):
-        if not self.secret:
-            return self.webhook_url
-        timestamp, sign = self._generate_signature()
-        return f"{self.webhook_url}&timestamp={timestamp}&sign={sign}"
+        # 遍历所有环境变量(忽略大小写)，找到项目对应的 Webhook URL
+        for env_key, env_value in os.environ.items():
+            if env_key.upper() == f"DINGTALK_WEBHOOK_URL_{project_name.upper()}":
+                webhook_url = env_value
+                break
 
-    def send_message(self, content: str, msg_type='text', title='通知', is_at_all=False):
+        # 如果未找到，降级使用全局的 Webhook URL
+        if not webhook_url:
+            webhook_url = self.default_webhook_url
+
+        if not webhook_url:
+            raise ValueError(f"No DingTalk webhook URL found for project {project_name}")
+        return webhook_url
+
+    def send_message(self, content: str, msg_type='text', title='通知', is_at_all=False, project_name=None):
         if not self.enabled:
             logger.info("钉钉推送未启用")
             return
 
-        if not self.webhook_url:
-            logger.error("钉钉Webhook URL未配置")
-            return
         try:
-            post_url = self._get_post_url()
+            post_url = self._get_webhook_url(project_name=project_name)
             headers = {
                 "Content-Type": "application/json",
                 "Charset": "UTF-8"
@@ -70,8 +74,8 @@ class DingTalkNotifier:
             response = requests.post(url=post_url, data=json.dumps(message), headers=headers)
             response_data = response.json()
             if response_data.get('errmsg') == 'ok':
-                logger.info("钉钉消息发送成功!")
+                logger.info(f"钉钉消息发送成功! webhook_url:{post_url}")
             else:
-                logger.error(f"发送失败:{response_data.get('errmsg')}")
+                logger.error(f"钉钉消息发送失败! webhook_url:{post_url},errmsg:{response_data.get('errmsg')}")
         except Exception as e:
-            logger.error("发送钉钉消息失败:", e)
+            logger.error(f"钉钉消息发送失败! ", e)
