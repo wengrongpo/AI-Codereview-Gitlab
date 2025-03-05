@@ -156,7 +156,7 @@ python ui.py
   ```
 ## 常见问题
 
-[常见问题](doc/faq.md)
+参见 [常见问题](doc/faq.md)
 
 ## 交流
 
