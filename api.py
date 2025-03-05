@@ -24,9 +24,11 @@ api_app = Flask(__name__)
 
 @api_app.route('/')
 def home():
-    return """<h2>The code review server is running.</h2>
-              <p>开源地址：<a href="https://github.com/sunmh207/AI-Codereview-Gitlab" target="_blank">
-              https://github.com/sunmh207/AI-Codereview-Gitlab</a></p>"""
+    return """<h2>The code review api server is running.</h2>
+              <p>GitHub project address: <a href="https://github.com/sunmh207/AI-Codereview-Gitlab" target="_blank">
+              https://github.com/sunmh207/AI-Codereview-Gitlab</a></p>
+              <p>Gitee project address: <a href="https://gitee.com/sunminghui/ai-codereview-gitlab" target="_blank">https://gitee.com/sunminghui/ai-codereview-gitlab</a></p>
+              """
 
 
 @api_app.route('/review/daily_report', methods=['GET'])
