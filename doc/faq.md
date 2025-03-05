@@ -33,3 +33,22 @@ GitLab 默认禁止 Webhooks 访问本地网络地址。
 - 进入 GitLab 管理区域：Admin Area → Settings → Network。
 - 在 Outbound requests 部分，勾选 Allow requests to the local network from webhooks and integrations。
 - 保存。
+
+#### 3.如何让不同项目的消息发送到不通的群？
+
+**解决方案**
+
+在项目的 .env 文件中，配置不同项目的群机器人的 Webhook 地址。
+以 DingTalk 为例，配置如下：
+
+```
+DINGTALK_ENABLED=1
+#项目A的群机器人的Webhook地址
+DINGTALK_WEBHOOK_URL_PROJECT_A=https://oapi.dingtalk.com/robot/send?access_token={access_token_of_project_a}
+#项目B的群机器人的Webhook地址
+DINGTALK_WEBHOOK_URL_PROJECT_B=https://oapi.dingtalk.com/robot/send?access_token={access_token_of_project_b}
+#保留默认WEBHOOK_URL，发送日报或者其它项目将使用此URL
+DINGTALK_WEBHOOK_URL=https://oapi.dingtalk.com/robot/send?access_token={access_token}
+```
+
+飞书和企业微信的配置方式类似。
