@@ -34,7 +34,7 @@ GitLab 默认禁止 Webhooks 访问本地网络地址。
 - 在 Outbound requests 部分，勾选 Allow requests to the local network from webhooks and integrations。
 - 保存。
 
-#### 3.如何让不同项目的消息发送到不通的群？
+#### 3.如何让不同项目的消息发送到不同的群？
 
 **解决方案**
 
