@@ -154,6 +154,9 @@ python ui.py
   FEISHU_ENABLED=1
   FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/xxx #替换为你的Webhook URL
   ```
+## 常见问题
+
+[常见问题](doc/faq.md)
 
 ## 交流
 
