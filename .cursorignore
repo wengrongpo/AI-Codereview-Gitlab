@@ -1,0 +1,15 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+.DS_Store
+venv/
+test/
+.idea/
+docker
+
+log/*
+!log/
+data/*
+!data/
+
+.env
+.pyc
+__pycache__/

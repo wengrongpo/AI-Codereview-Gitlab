@@ -13,6 +13,7 @@ from flask import Flask, request, jsonify
 from biz.entity.review_entity import MergeRequestReviewEntity, PushReviewEntity
 from biz.event.event_manager import event_manager
 from biz.gitlab.webhook_handler import MergeRequestHandler, PushHandler
+from biz.service.review_service import ReviewService
 from biz.utils.code_reviewer import CodeReviewer
 from biz.utils.im import im_notifier
 from biz.utils.log import logger
@@ -33,41 +34,68 @@ def home():
 
 @api_app.route('/review/daily_report', methods=['GET'])
 def daily_report():
-    data_dir = os.getenv('REPORT_DATA_DIR', './')
-    data_file = "push_" + datetime.now().strftime("%Y-%m-%d") + ".json"
-    data_file_path = os.path.join(data_dir, data_file)
-    data_entries = []
-    if os.path.exists(data_file_path):
-        with open(data_file_path, 'r', encoding='utf-8') as file:
-            for line in file:
-                # 解析每一行的 JSON 内容，并添加到 data_entries 数组中
-                try:
-                    data_entries.append(json.loads(line))
-                except json.JSONDecodeError:
-                    # 处理可能的 JSON 解码错误
-                    logger.error(f"Skipping invalid JSON entry: {line}")
-    else:
-        logger.error(f"Log file {data_file_path} does not exist.")
-        return jsonify({'message': f"Log file {data_file_path} does not exist."}), 404
+    # 获取当前日期0点和23点59分59秒的时间戳
+    start_time = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    end_time = datetime.now().replace(hour=23, minute=59, second=59, microsecond=0).timestamp()
 
-    # 如果没有data,直接返回
-    if not data_entries:
-        return jsonify({'message': 'No data to process.'}), 200
+    try:
+        df = ReviewService().get_mr_review_logs(updated_at_gte=start_time, updated_at_lte=end_time)
 
-    # 使用字典去重 (author, message) 相同的提交记录
-    unique_commits = {}
-    for entry in data_entries:
-        author = entry.get("author", "Unknown Author")
-        message = entry.get("message", "").strip()
-        if (author, message) not in unique_commits:
-            unique_commits[(author, message)] = {"author": author, "message": message}
+        if df.empty:
+            logger.info("No data to process.")
+            return jsonify({'message': 'No data to process.'}), 200
+        # 去重：基于 (author, message) 组合
+        df_unique = df.drop_duplicates(subset=["author", "commit_messages"])
+        # 按照 author 排序
+        df_sorted = df_unique.sort_values(by="author")
+        # 转换为适合生成日报的格式
+        commits = df_sorted.to_dict(orient="records")
+        # 生成日报内容
+        report_txt = Reporter().generate_report(json.dumps(commits))
+        # 发送钉钉通知
+        im_notifier.send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
+        
+        # 返回生成的日报内容
+        return json.dumps(report_txt, ensure_ascii=False, indent=4)
+    except Exception as e:
+        logger.error(f"Failed to generate daily report: {e}")
+        return jsonify({'message': f"Failed to generate daily report: {e}"}), 500
 
-    # 转换为列表形式，并按照 author 排序
-    commits = sorted(unique_commits.values(), key=lambda x: x["author"])
-    report_txt = Reporter().generate_report(json.dumps(commits))
-    # 发钉钉消息
-    im_notifier.send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
-    return json.dumps(report_txt, ensure_ascii=False, indent=4)
+    # data_dir = os.getenv('REPORT_DATA_DIR', './')
+    # data_file = "push_" + datetime.now().strftime("%Y-%m-%d") + ".json"
+    # data_file_path = os.path.join(data_dir, data_file)
+    # data_entries = []
+    # if os.path.exists(data_file_path):
+    #     with open(data_file_path, 'r', encoding='utf-8') as file:
+    #         for line in file:
+    #             # 解析每一行的 JSON 内容，并添加到 data_entries 数组中
+    #             try:
+    #                 data_entries.append(json.loads(line))
+    #             except json.JSONDecodeError:
+    #                 # 处理可能的 JSON 解码错误
+    #                 logger.error(f"Skipping invalid JSON entry: {line}")
+    # else:
+    #     logger.error(f"Log file {data_file_path} does not exist.")
+    #     return jsonify({'message': f"Log file {data_file_path} does not exist."}), 404
+
+    # # 如果没有data,直接返回
+    # if not data_entries:
+    #     return jsonify({'message': 'No data to process.'}), 200
+
+    # # 使用字典去重 (author, message) 相同的提交记录
+    # unique_commits = {}
+    # for entry in data_entries:
+    #     author = entry.get("author", "Unknown Author")
+    #     message = entry.get("message", "").strip()
+    #     if (author, message) not in unique_commits:
+    #         unique_commits[(author, message)] = {"author": author, "message": message}
+
+    # # 转换为列表形式，并按照 author 排序
+    # commits = sorted(unique_commits.values(), key=lambda x: x["author"])
+    # report_txt = Reporter().generate_report(json.dumps(commits))
+    # # 发钉钉消息
+    # im_notifier.send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
+    # return json.dumps(report_txt, ensure_ascii=False, indent=4)
 
 
 # 启动定时生成日报的任务

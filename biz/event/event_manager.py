@@ -42,16 +42,6 @@ def on_merge_request_reviewed(mr_review_entity: MergeRequestReviewEntity):
 
 
 def on_push_reviewed(entity: PushReviewEntity):
-    # 记录到日志文件, 日报数据 TODO: 待优化
-    commits_filtered = [{'message': commit['message'], 'author': commit['author'], 'timestamp': commit['timestamp']}
-                        for commit in entity.commits]
-    data_dir = os.getenv('REPORT_DATA_DIR', './')
-    push_data_file = "push_" + datetime.now().strftime("%Y-%m-%d") + ".json"
-    push_file_path = os.path.join(data_dir, push_data_file)
-    with open(push_file_path, 'a', encoding='utf-8') as f:
-        for commit in commits_filtered:
-            f.write(json.dumps(commit, ensure_ascii=False) + "\n")
-
     # 发送IM消息通知
     im_msg = f"### 🚀 {entity.project_name}: Push\n\n"
     im_msg += "#### 提交记录:\n"
