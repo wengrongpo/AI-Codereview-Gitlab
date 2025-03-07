@@ -170,5 +170,7 @@ streamlit run ui.py --server.port=5002 --server.address=0.0.0.0
 
 也欢迎加微信/微信群，一起交流学习。
 
-![wechat](./doc/img/wechat.jpg)
-![wechat](./doc/img/wechat_group.jpg)
+<div style="display: flex;">
+  <img src="./doc/img/wechat.jpg" alt="微信" style="width: 50%;">
+  <img src="./doc/img/wechat_group.jpg" alt="微信群" style="width: 50%;">
+</div>
