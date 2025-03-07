@@ -168,6 +168,7 @@ streamlit run ui.py --server.port=5002 --server.address=0.0.0.0
 
 若本项目对您有帮助，欢迎 Star ⭐️ 或 Fork。 有任何问题或建议，欢迎提交 Issue 或 PR。
 
-欢迎加入我们的微信群，与我们一起交流学习。
-![wechat](./doc/img/wechat_group.jpg)
+也欢迎加微信/微信群，一起交流学习。
+
 ![wechat](./doc/img/wechat.jpg)
+![wechat](./doc/img/wechat_group.jpg)
