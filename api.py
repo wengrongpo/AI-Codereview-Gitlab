@@ -61,41 +61,6 @@ def daily_report():
         logger.error(f"Failed to generate daily report: {e}")
         return jsonify({'message': f"Failed to generate daily report: {e}"}), 500
 
-    # data_dir = os.getenv('REPORT_DATA_DIR', './')
-    # data_file = "push_" + datetime.now().strftime("%Y-%m-%d") + ".json"
-    # data_file_path = os.path.join(data_dir, data_file)
-    # data_entries = []
-    # if os.path.exists(data_file_path):
-    #     with open(data_file_path, 'r', encoding='utf-8') as file:
-    #         for line in file:
-    #             # 解析每一行的 JSON 内容，并添加到 data_entries 数组中
-    #             try:
-    #                 data_entries.append(json.loads(line))
-    #             except json.JSONDecodeError:
-    #                 # 处理可能的 JSON 解码错误
-    #                 logger.error(f"Skipping invalid JSON entry: {line}")
-    # else:
-    #     logger.error(f"Log file {data_file_path} does not exist.")
-    #     return jsonify({'message': f"Log file {data_file_path} does not exist."}), 404
-
-    # # 如果没有data,直接返回
-    # if not data_entries:
-    #     return jsonify({'message': 'No data to process.'}), 200
-
-    # # 使用字典去重 (author, message) 相同的提交记录
-    # unique_commits = {}
-    # for entry in data_entries:
-    #     author = entry.get("author", "Unknown Author")
-    #     message = entry.get("message", "").strip()
-    #     if (author, message) not in unique_commits:
-    #         unique_commits[(author, message)] = {"author": author, "message": message}
-
-    # # 转换为列表形式，并按照 author 排序
-    # commits = sorted(unique_commits.values(), key=lambda x: x["author"])
-    # report_txt = Reporter().generate_report(json.dumps(commits))
-    # # 发钉钉消息
-    # im_notifier.send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
-    # return json.dumps(report_txt, ensure_ascii=False, indent=4)
 
 
 # 启动定时生成日报的任务
