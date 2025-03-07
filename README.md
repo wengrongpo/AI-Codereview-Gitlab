@@ -106,7 +106,7 @@ python api.py
 - 启动Dashboard服务：
 
 ```bash
-python ui.py
+streamlit run ui.py --server.port=5002 --server.address=0.0.0.0
 ```
 
 ### 配置 GitLab Webhook
