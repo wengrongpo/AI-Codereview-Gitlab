@@ -138,7 +138,6 @@ python ui.py
   DINGTALK_ENABLED=1  #0不发送钉钉消息，1发送钉钉消息
   DINGTALK_WEBHOOK_URL=https://oapi.dingtalk.com/robot/send?access_token=xxx #替换为你的Webhook URL
   ```
-- 如果使用企业机器人，需要配置DINGTALK_SECRET，具体可参考：https://open.dingtalk.com/document/orgapp/obtain-orgapp-token
 
 #### 2.配置企业微信推送
 
