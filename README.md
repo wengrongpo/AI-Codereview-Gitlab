@@ -61,7 +61,7 @@ GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 **2. 启动docker容器**
 
 ```bash
-docker run -d --name codereview-gitlab \
+docker run --rm --name codereview-gitlab \
   -p 5001:5001 \
   -p 5002:5002 \
   -v $(pwd)/.env:/app/.env \
@@ -125,7 +125,7 @@ streamlit run ui.py --server.port=5002 --server.address=0.0.0.0
 - Trigger Events：勾选 Push Events 和 Merge Request Events (不要勾选其它Event)
 - Secret Token：上面配置的 Access Token(可选)
 
-备注：系统会优先使用.env中的GITLAB_ACCESS_TOKEN，如果找到，则使用Webhook 传递的Secret Token
+备注：系统会优先使用.env中的GITLAB_ACCESS_TOKEN，如果未找到，则使用Webhook 传递的Secret Token
 
 ### 配置消息推送
 
