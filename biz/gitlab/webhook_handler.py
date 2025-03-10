@@ -1,5 +1,6 @@
 import json
 import time
+from urllib.parse import urljoin
 
 import requests
 
@@ -42,7 +43,8 @@ class MergeRequestHandler:
         retry_delay = 10  # 重试间隔时间（秒）
         for attempt in range(max_retries):
             # 调用 GitLab API 获取 Merge Request 的 changes
-            url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/merge_requests/{self.merge_request_iid}/changes"
+            url = urljoin(f"{self.gitlab_url}/",
+                          f"api/v4/projects/{self.project_id}/merge_requests/{self.merge_request_iid}/changes")
             headers = {
                 'Private-Token': self.gitlab_token
             }
@@ -72,7 +74,8 @@ class MergeRequestHandler:
             return []
 
         # 调用 GitLab API 获取 Merge Request 的 commits
-        url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/merge_requests/{self.merge_request_iid}/commits"
+        url = urljoin(f"{self.gitlab_url}/",
+                      f"api/v4/projects/{self.project_id}/merge_requests/{self.merge_request_iid}/commits")
         headers = {
             'Private-Token': self.gitlab_token
         }
@@ -86,7 +89,8 @@ class MergeRequestHandler:
             return []
 
     def add_merge_request_notes(self, review_result):
-        url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/merge_requests/{self.merge_request_iid}/notes"
+        url = urljoin(f"{self.gitlab_url}/",
+                      f"api/v4/projects/{self.project_id}/merge_requests/{self.merge_request_iid}/notes")
         headers = {
             'Private-Token': self.gitlab_token,
             'Content-Type': 'application/json'
@@ -158,7 +162,8 @@ class PushHandler:
             logger.error("Last commit ID not found.")
             return
 
-        url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/repository/commits/{last_commit_id}/comments"
+        url = urljoin(f"{self.gitlab_url}/",
+                      f"api/v4/projects/{self.project_id}/repository/commits/{last_commit_id}/comments")
         headers = {
             'Private-Token': self.gitlab_token,
             'Content-Type': 'application/json'
@@ -192,7 +197,8 @@ class PushHandler:
         before = self.webhook_data.get('before', '')
         after = self.webhook_data.get('after', '')
         if before and after:
-            url = f"{self.gitlab_url}/api/v4/projects/{self.project_id}/repository/compare?from={before}&to={after}"
+            url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/compare')}?from={before}&to={after}"
+
             response = requests.get(url, headers=headers)
             logger.debug(f"Get changes response from GitLab for push event: {response.status_code}, {response.text}")
             if response.status_code == 200:
