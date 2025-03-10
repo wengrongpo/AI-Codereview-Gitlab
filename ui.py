@@ -60,7 +60,7 @@ def display_data(tab, service_func, columns, column_config):
 
         unique_authors = sorted(df["author"].dropna().unique().tolist()) if not df.empty else []
         with col3:
-            authors = st.multiselect("用户名", unique_authors, default=[])
+            authors = st.multiselect("用户名", unique_authors, default=[], key=f"{tab}_authors")
 
         data = get_data(service_func, authors=authors, updated_at_gte=int(start_datetime.timestamp()),
                         updated_at_lte=int(end_datetime.timestamp()), columns=columns)
