@@ -65,7 +65,7 @@ docker run --rm --name codereview-gitlab \
   -p 5001:5001 \
   -p 5002:5002 \
   -v $(pwd)/.env:/app/.env \
-  registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.2.0
+  registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.2.1
 ```
 
 **3. 验证服务**
