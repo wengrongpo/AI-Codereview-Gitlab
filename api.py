@@ -55,13 +55,12 @@ def daily_report():
         report_txt = Reporter().generate_report(json.dumps(commits))
         # 发送钉钉通知
         im_notifier.send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
-        
+
         # 返回生成的日报内容
         return json.dumps(report_txt, ensure_ascii=False, indent=4)
     except Exception as e:
         logger.error(f"Failed to generate daily report: {e}")
         return jsonify({'message': f"Failed to generate daily report: {e}"}), 500
-
 
 
 # 启动定时生成日报的任务
@@ -242,20 +241,13 @@ def filter_changes(changes: list):
     # 过滤 `new_path` 以支持的扩展名结尾的元素, 仅保留diff和new_path字段
     filtered_changes = [
         {
-            'diff': __filter_diff_content(item.get('diff', '')),  # 过滤 diff 内容
+            'diff': item.get('diff', ''),
             'new_path': item['new_path']
         }
         for item in filter_deleted_files_changes
         if any(item.get('new_path', '').endswith(ext) for ext in SUPPORTED_EXTENSIONS)
     ]
     return filtered_changes
-
-def __filter_diff_content(diff_content):
-    # 过滤掉以 - 开头的行和 @@ 开头的行
-    filtered_content = re.sub(r'(^-.*\n)|(^@@.*\n)', '', diff_content, flags=re.MULTILINE)
-    # 处理代码，去掉以 + 开头的行的第一个字符
-    processed_code = '\n'.join([line[1:] if line.startswith('+') else line for line in filtered_content.split('\n')])
-    return processed_code
 
 
 def review_code(changes_text: str, commits_text: str = '') -> str:
