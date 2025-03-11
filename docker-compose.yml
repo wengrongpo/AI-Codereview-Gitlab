@@ -8,4 +8,6 @@ services:
       - ./.env:/app/.env
       - ./log:/app/log
       - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
     restart: unless-stopped

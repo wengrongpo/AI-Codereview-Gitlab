@@ -61,10 +61,11 @@ GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 **2. 启动docker容器**
 
 ```bash
-docker run --rm --name codereview-gitlab \
+docker run --rm --name ai-codereview-gitlab \
   -p 5001:5001 \
   -p 5002:5002 \
   -v $(pwd)/.env:/app/.env \
+  -e TZ=Asia/Shanghai \
   registry.cn-hangzhou.aliyuncs.com/stanley-public/ai-codereview-gitlab:1.2.1
 ```
 
