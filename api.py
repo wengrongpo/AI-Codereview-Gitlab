@@ -1,7 +1,6 @@
 import atexit
 import json
 import os
-import re
 import traceback
 from datetime import datetime
 from multiprocessing import Process
@@ -23,6 +22,8 @@ from biz.utils.reporter import Reporter
 load_dotenv()
 api_app = Flask(__name__)
 
+PUSH_REVIEW_ENABLED = os.environ.get('PUSH_REVIEW_ENABLED', '0') == '1'
+
 
 @api_app.route('/')
 def home():
@@ -40,7 +41,10 @@ def daily_report():
     end_time = datetime.now().replace(hour=23, minute=59, second=59, microsecond=0).timestamp()
 
     try:
-        df = ReviewService().get_mr_review_logs(updated_at_gte=start_time, updated_at_lte=end_time)
+        if PUSH_REVIEW_ENABLED:
+            df = ReviewService().get_push_review_logs(updated_at_gte=start_time, updated_at_lte=end_time)
+        else:
+            df = ReviewService().get_mr_review_logs(updated_at_gte=start_time, updated_at_lte=end_time)
 
         if df.empty:
             logger.info("No data to process.")
@@ -63,29 +67,37 @@ def daily_report():
         return jsonify({'message': f"Failed to generate daily report: {e}"}), 500
 
 
-# 启动定时生成日报的任务
-scheduler = BackgroundScheduler()
-crontab_expression = os.getenv('REPORT_CRONTAB_EXPRESSION', '0 22 * * 1-5')
-cron_parts = crontab_expression.split()
-cron_minute, cron_hour, cron_day, cron_month, cron_day_of_week = cron_parts
+def setup_scheduler():
+    """
+    配置并启动定时任务调度器
+    """
+    try:
+        scheduler = BackgroundScheduler()
+        crontab_expression = os.getenv('REPORT_CRONTAB_EXPRESSION', '0 18 * * 1-5')
+        cron_parts = crontab_expression.split()
+        cron_minute, cron_hour, cron_day, cron_month, cron_day_of_week = cron_parts
 
-# Schedule the task based on the crontab expression
-scheduler.add_job(
-    daily_report,
-    trigger=CronTrigger(
-        minute=cron_minute,
-        hour=cron_hour,
-        day=cron_day,
-        month=cron_month,
-        day_of_week=cron_day_of_week
-    )
-)
+        # Schedule the task based on the crontab expression
+        scheduler.add_job(
+            daily_report,
+            trigger=CronTrigger(
+                minute=cron_minute,
+                hour=cron_hour,
+                day=cron_day,
+                month=cron_month,
+                day_of_week=cron_day_of_week
+            )
+        )
 
-# Start the scheduler
-scheduler.start()
+        # Start the scheduler
+        scheduler.start()
+        logger.info("Scheduler started successfully.")
 
-# Shut down the scheduler when exiting the app
-atexit.register(lambda: scheduler.shutdown())
+        # Shut down the scheduler when exiting the app
+        atexit.register(lambda: scheduler.shutdown())
+    except Exception as e:
+        logger.error(f"Error setting up scheduler: {e}")
+        logger.error(traceback.format_exc())
 
 
 # 处理 GitLab Merge Request Webhook
@@ -135,8 +147,6 @@ def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             logger.error('Failed to get commits')
             return
 
-            # review 代码
-        PUSH_REVIEW_ENABLED = os.environ.get('PUSH_REVIEW_ENABLED', '0') == '1'
         review_result = None
         score = 0
         if PUSH_REVIEW_ENABLED:
@@ -267,5 +277,9 @@ def review_code(changes_text: str, commits_text: str = '') -> str:
 
 
 if __name__ == '__main__':
+    # 启动定时任务调度器
+    setup_scheduler()
+
+    # 启动Flask API服务
     port = int(os.environ.get('SERVER_PORT', 5001))
     api_app.run(host='0.0.0.0', port=port)

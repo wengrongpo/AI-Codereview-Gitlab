@@ -200,11 +200,11 @@ class PushHandler:
             url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/compare')}?from={before}&to={after}"
 
             response = requests.get(url, headers=headers)
-            logger.debug(f"Get changes response from GitLab for push event: {response.status_code}, {response.text}")
+            logger.debug(f"Get changes response from GitLab for push event: {response.status_code}, {response.text}, URL: {url}")
             if response.status_code == 200:
                 return response.json().get('diffs', [])
             else:
-                logger.warn(f"Failed to get changes for push event: {response.status_code}, {response.text}")
+                logger.warn(f"Failed to get changes for push event: {response.status_code}, {response.text}, URL: {url}")
                 return []
         else:
             return []
