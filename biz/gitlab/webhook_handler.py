@@ -48,7 +48,7 @@ class MergeRequestHandler:
             headers = {
                 'Private-Token': self.gitlab_token
             }
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, verify=False)
             logger.debug(
                 f"Get changes response from GitLab (attempt {attempt + 1}): {response.status_code}, {response.text}, URL: {url}")
 
@@ -79,7 +79,7 @@ class MergeRequestHandler:
         headers = {
             'Private-Token': self.gitlab_token
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, verify=False)
         logger.debug(f"Get commits response from gitlab: {response.status_code}, {response.text}")
         # 检查请求是否成功
         if response.status_code == 200:
@@ -98,7 +98,7 @@ class MergeRequestHandler:
         data = {
             'body': review_result
         }
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(url, headers=headers, json=data, verify=False)
         logger.debug(f"Add notes to gitlab {url}: {response.status_code}, {response.text}")
         if response.status_code == 201:
             logger.info("Note successfully added to merge request.")
@@ -171,7 +171,7 @@ class PushHandler:
         data = {
             'note': message
         }
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(url, headers=headers, json=data, verify=False)
         logger.debug(f"Add comment to commit {last_commit_id}: {response.status_code}, {response.text}")
         if response.status_code == 201:
             logger.info("Comment successfully added to push commit.")
@@ -199,12 +199,14 @@ class PushHandler:
         if before and after:
             url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/compare')}?from={before}&to={after}"
 
-            response = requests.get(url, headers=headers)
-            logger.debug(f"Get changes response from GitLab for push event: {response.status_code}, {response.text}, URL: {url}")
+            response = requests.get(url, headers=headers, verify=False)
+            logger.debug(
+                f"Get changes response from GitLab for push event: {response.status_code}, {response.text}, URL: {url}")
             if response.status_code == 200:
                 return response.json().get('diffs', [])
             else:
-                logger.warn(f"Failed to get changes for push event: {response.status_code}, {response.text}, URL: {url}")
+                logger.warn(
+                    f"Failed to get changes for push event: {response.status_code}, {response.text}, URL: {url}")
                 return []
         else:
             return []
