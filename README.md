@@ -27,6 +27,8 @@
 调用本系统的接口；本系统调用第三方大模型对代码进行审查，并将审查结果记录在对应的 Merge Request 或 Commit 的 Note
 中。
 
+![流程图](./doc/img/process.png)
+
 ## 部署
 
 ### 方案一：Docker 部署
