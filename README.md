@@ -23,9 +23,7 @@
 
 ## 原理
 
-当用户在 GitLab 上提交代码（包括 Merge Request 或 Push 操作）时，GitLab 会触发 webhook 事件，并
-调用本系统的接口；本系统调用第三方大模型对代码进行审查，并将审查结果记录在对应的 Merge Request 或 Commit 的 Note
-中。
+当用户在 GitLab 上提交代码（如 Merge Request 或 Push 操作）时，GitLab 将自动触发 webhook 事件，调用本系统的接口。系统随后通过第三方大模型对代码进行审查，并将审查结果直接反馈到对应的 Merge Request 或 Commit 的 Note 中，便于团队查看和处理。
 
 ![流程图](./doc/img/process.png)
 
