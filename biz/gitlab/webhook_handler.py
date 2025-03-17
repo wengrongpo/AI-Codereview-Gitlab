@@ -210,3 +210,107 @@ class PushHandler:
                 return []
         else:
             return []
+
+class SystemHookHandler:
+    def __init__(self, webhook_data: dict, gitlab_token: str, gitlab_url: str):
+        self.webhook_data = webhook_data
+        self.gitlab_token = gitlab_token
+        self.gitlab_url = gitlab_url
+        self.event_type = None
+        self.project_id = None
+        self.changes = []
+        self.parse_event_type()
+
+    def parse_event_type(self):
+        # 提取 event_type
+        self.event_type = self.webhook_data.get('event_name', None)
+        if self.event_type == 'repository_update':
+            self.parse_repository_update_event()
+
+    def parse_repository_update_event(self):
+        # 解析 repository_update 事件的相关参数
+        self.project_id = self.webhook_data.get('project', {}).get('id')
+        self.changes = self.webhook_data.get('changes', [])
+
+    def get_repository_changes(self) -> list:
+        # 检查是否为 repository_update 事件
+        if self.event_type != 'repository_update':
+            logger.warn(f"Invalid event type: {self.event_type}. Only 'repository_update' event is supported now.")
+            return []
+
+        if not self.changes:
+            logger.warn("No changes found in webhook data.")
+            return []
+
+        headers = {'Private-Token': self.gitlab_token}
+        all_diffs = []
+
+        max_retries = 3  # 最大重试次数
+        retry_delay = 10  # 重试间隔时间（秒）
+
+        for change in self.changes:
+            before = change.get('before')
+            after = change.get('after')
+            ref = change.get('ref', 'unknown branch')
+
+            if not before or not after:
+                logger.warn(f"Missing before or after commit ID for ref {ref}.")
+                continue
+
+            url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/compare')}?from={before}&to={after}"
+
+            for attempt in range(max_retries):
+                response = requests.get(url, headers=headers, verify=False)
+                logger.debug(
+                    f"Get changes response from GitLab for repository_update (attempt {attempt + 1}): {response.status_code}, {response.text}, URL: {url}")
+
+                if response.status_code == 200:
+                    diffs = response.json().get('diffs', [])
+                    if diffs:
+                        all_diffs.extend(diffs)
+                    break
+                else:
+                    logger.warn(
+                        f"Failed to get changes for ref {ref}: {response.status_code}, {response.text}, retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+
+        if not all_diffs:
+            logger.warning(f"Max retries ({max_retries}) reached. Unable to retrieve repository changes.")
+        return all_diffs
+
+    def get_repository_commits(self) -> list:
+        # 获取 repository_update 事件中的提交信息
+        if self.event_type != 'repository_update':
+            logger.warn(f"Invalid event type: {self.event_type}. Only 'repository_update' event is supported now.")
+            return []
+
+        if not self.changes:
+            logger.warn("No changes found in webhook data.")
+            return []
+
+        headers = {'Private-Token': self.gitlab_token}
+        all_commits = []
+
+        for change in self.changes:
+            before = change.get('before')
+            after = change.get('after')
+            ref = change.get('ref', 'unknown branch')
+
+            if not before or not after:
+                logger.warn(f"Missing before or after commit ID for ref {ref}.")
+                continue
+
+            url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/commits')}?ref_name={ref}"
+            response = requests.get(url, headers=headers, verify=False)
+            logger.debug(
+                f"Get commits response from GitLab for repository_update: {response.status_code}, {response.text}, URL: {url}")
+
+            if response.status_code == 200:
+                commits = response.json()
+                if commits:
+                    all_commits.extend(commits)
+            else:
+                logger.warn(
+                    f"Failed to get commits for ref {ref}: {response.status_code}, {response.text}")
+
+        return all_commits

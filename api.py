@@ -10,9 +10,9 @@ from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 
-from biz.entity.review_entity import MergeRequestReviewEntity, PushReviewEntity
+from biz.entity.review_entity import MergeRequestReviewEntity, PushReviewEntity, SystemHookReviewEntity
 from biz.event.event_manager import event_manager
-from biz.gitlab.webhook_handler import MergeRequestHandler, PushHandler
+from biz.gitlab.webhook_handler import MergeRequestHandler, PushHandler, SystemHookHandler
 from biz.service.review_service import ReviewService
 from biz.utils.code_reviewer import CodeReviewer
 from biz.utils.im import im_notifier
@@ -132,6 +132,12 @@ def handle_webhook():
             process.start()
             # 立马返回响应
             return jsonify({'message': 'Request received, will process asynchronously.'}), 200
+        elif event_type == 'System Hook':
+            # 创建一个新进程进行异步处理
+            process = Process(target=__handle_system_hook, args=(data, gitlab_token, gitlab_url))
+            process.start()
+            # 立马返回响应
+            return jsonify({'message': 'Request received, will process asynchronously.'}), 200
         else:
             return jsonify({'message': 'Event type not supported'}), 400
     else:
@@ -239,6 +245,43 @@ def __handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_u
         im_notifier.send_notification(content=error_message)
         logger.error('出现未知错误: %s', error_message)
 
+def __handle_system_hook(webhook_data: dict, gitlab_token: str, gitlab_url: str):
+    '''
+    处理System Hook事件
+    :param webhook_data:
+    :param gitlab_token:
+    :param gitlab_url:
+    :return:
+    '''
+    try:
+        logger.info('System Hook event received')
+        handler = SystemHookHandler(webhook_data, gitlab_token, gitlab_url)
+        changes = handler.get_repository_changes()
+        logger.info('changes: %s', changes)
+        changes = filter_changes(changes)
+        if not changes:
+            logger.info('未检测到有关代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
+            return
+        commits = handler.get_repository_commits()
+        # review 代码
+        commits_text = ';'.join(commit['title'] for commit in commits)
+        review_result = review_code(str(changes), commits_text)
+        logger.info(f'Payload: {json.dumps(webhook_data)}')
+        # dispatch system_hook_reviewed event
+        event_manager['system_hook_reviewed'].send(
+            SystemHookReviewEntity(
+                project_name=webhook_data['project']['name'],
+                author=webhook_data['user_name'],
+                updated_at=int(datetime.now().timestamp()),
+                commits=commits,
+                score=CodeReviewer.parse_review_score(review_text=review_result),
+                review_result=review_result
+            )
+        )
+    except Exception as e:
+        error_message = f'AI Code Review 服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
+        im_notifier.send_notification(content=error_message)
+        logger.error('出现未知错误: %s', error_message)
 
 def filter_changes(changes: list):
     '''
