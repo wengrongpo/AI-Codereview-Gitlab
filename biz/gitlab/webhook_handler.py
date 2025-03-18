@@ -179,6 +179,46 @@ class PushHandler:
             logger.error(f"Failed to add comment: {response.status_code}")
             logger.error(response.text)
 
+    def __repository_commits(self, ref_name: str = "", since: str = "", until: str = "", pre_page: int = 100, page: int = 1):
+        # 获取仓库提交信息
+        url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/commits')}?ref_name={ref_name}&since={since}&until={until}&per_page={pre_page}&page={page}"
+        headers = {
+            'Private-Token': self.gitlab_token
+        }
+        response = requests.get(url, headers=headers, verify=False)
+        logger.debug(
+            f"Get commits response from GitLab for repository_commits: {response.status_code}, {response.text}, URL: {url}")
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.warn(
+                f"Failed to get commits for ref {ref_name}: {response.status_code}, {response.text}")
+            return []
+
+    def get_parent_commit_id(self, commit_id: str) -> str:
+        commits = self.__repository_commits(ref_name=commit_id, pre_page=1, page=1)
+        if commits and commits[0].get('parent_ids', []):
+            return commits[0].get('parent_ids', [])[0]
+        return ""
+
+    def repository_compare(self, before: str, after: str):
+        # 比较两个提交之间的差异
+        url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/compare')}?from={before}&to={after}"
+        headers = {
+            'Private-Token': self.gitlab_token
+        }
+        response = requests.get(url, headers=headers, verify=False)
+        logger.debug(
+            f"Get changes response from GitLab for repository_compare: {response.status_code}, {response.text}, URL: {url}")
+
+        if response.status_code == 200:
+            return response.json().get('diffs', [])
+        else:
+            logger.warn(
+                f"Failed to get changes for repository_compare: {response.status_code}, {response.text}")
+            return []
+
     def get_push_changes(self) -> list:
         # 检查是否为 Push 事件
         if self.event_type != 'push':
@@ -197,19 +237,19 @@ class PushHandler:
         before = self.webhook_data.get('before', '')
         after = self.webhook_data.get('after', '')
         if before and after:
-            url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/compare')}?from={before}&to={after}"
-
-            response = requests.get(url, headers=headers, verify=False)
-            logger.debug(
-                f"Get changes response from GitLab for push event: {response.status_code}, {response.text}, URL: {url}")
-            if response.status_code == 200:
-                return response.json().get('diffs', [])
-            else:
-                logger.warn(
-                    f"Failed to get changes for push event: {response.status_code}, {response.text}, URL: {url}")
+            if after.startswith('0000000'):
+                # 删除分支处理
                 return []
+            if before.startswith('0000000'):
+                # 创建分支处理
+                first_commit_id = self.commit_list[0].get('id')
+                parent_commit_id = self.get_parent_commit_id(first_commit_id)
+                if parent_commit_id:
+                    before = parent_commit_id
+            return self.repository_compare(before, after)
         else:
             return []
+
 
 class SystemHookHandler:
     def __init__(self, webhook_data: dict, gitlab_token: str, gitlab_url: str):
