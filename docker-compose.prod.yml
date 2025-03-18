@@ -16,5 +16,5 @@ services:
     restart: unless-stopped
 
 volumes:
-    data:
-    log:
+  data:
+  log:
