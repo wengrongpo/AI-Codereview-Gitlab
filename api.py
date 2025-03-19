@@ -266,7 +266,7 @@ def __handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_u
                     score=CodeReviewer.parse_review_score(review_text=review_result),
                     url=webhook_data['object_attributes']['url'],
                     review_result=review_result,
-                    gitlab_url = gitlab_url,
+                    gitlab_url = url_base,
                 )
             )
 
