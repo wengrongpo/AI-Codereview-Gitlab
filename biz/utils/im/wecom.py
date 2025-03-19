@@ -107,6 +107,31 @@ class WeComNotifier:
 
             if response.status_code != 200:
                 logger.error(f"企业微信消息发送失败! webhook_url:{post_url}, error_msg:{response.text}")
+
+                try:
+                    data = json.loads(response.text)
+                    errmsg = data.get("errmsg")
+                    if errmsg and "markdown.content exceed max length" in errmsg:
+                        # markdown渲染过长了，尝试text发送
+                        data = {
+                            "msgtype": "text",
+                            "text": {
+                                "content": content,
+                                "mentioned_list": ["@all"] if is_at_all else []
+                            }
+                        }
+
+                        response = requests.post(
+                            url=post_url,
+                            json=data,
+                            headers={'Content-Type': 'application/json'}
+                        )
+
+                except json.JSONDecodeError as e:
+                    print(f"JSON 解析失败: {e}")
+                except Exception as e:
+                    logger.error(f"企业微信消息发送失败! ", e)
+
                 return
 
             result = response.json()
