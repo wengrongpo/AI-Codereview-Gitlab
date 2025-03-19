@@ -1,10 +1,33 @@
-import json
+import os
 import time
 from urllib.parse import urljoin
 
 import requests
+from dotenv import load_dotenv
 
 from biz.utils.log import logger
+
+load_dotenv()
+# 从环境变量中获取支持的文件扩展名
+SUPPORTED_EXTENSIONS = os.getenv('SUPPORTED_EXTENSIONS', '.java,.py,.php').split(',')
+
+
+def filter_changes(changes: list):
+    '''
+    过滤数据，只保留支持的文件类型以及必要的字段信息
+    '''
+    filter_deleted_files_changes = [change for change in changes if change.get("deleted_file") == False]
+
+    # 过滤 `new_path` 以支持的扩展名结尾的元素, 仅保留diff和new_path字段
+    filtered_changes = [
+        {
+            'diff': item.get('diff', ''),
+            'new_path': item['new_path']
+        }
+        for item in filter_deleted_files_changes
+        if any(item.get('new_path', '').endswith(ext) for ext in SUPPORTED_EXTENSIONS)
+    ]
+    return filtered_changes
 
 
 class MergeRequestHandler:
