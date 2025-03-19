@@ -29,6 +29,9 @@ class OllamaClient(BaseClient):
         """
         if re.search(r'<think>.*?</think>', content, re.DOTALL):
             return re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+        elif "<think>" in content and "</think>" not in content:
+            # 大模型回复的时候，思考链有可能截断，那么果断忽略回复，返回空
+            return "COT ABORT!"
         return content
 
     def completions(self,
