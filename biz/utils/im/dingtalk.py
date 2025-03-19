@@ -16,7 +16,7 @@ class DingTalkNotifier:
         self.enabled = os.environ.get('DINGTALK_ENABLED', '0') == '1'
         self.default_webhook_url = webhook_url or os.environ.get('DINGTALK_WEBHOOK_URL')
 
-    def _get_webhook_url(self, project_name=None):
+    def _get_webhook_url(self, project_name=None, url_base=None):
         """
         获取项目对应的 Webhook URL
         :param project_name: 项目名称
@@ -35,6 +35,12 @@ class DingTalkNotifier:
         for env_key, env_value in os.environ.items():
             if env_key.upper() == target_key:
                 return env_value  # 找到匹配项，直接返回
+            
+        # url_base 优先级次之
+        target_key_url_base = f"WECOM_WEBHOOK_URL_{url_base.upper()}"
+        for env_key, env_value in os.environ.items():
+            if target_key_url_base !=None and  env_key.upper() == target_key_url_base:
+                return env_value  # 找到匹配项，直接返回
 
         # 如果未找到匹配的环境变量，降级使用全局的 Webhook URL
         if self.default_webhook_url:
@@ -43,13 +49,13 @@ class DingTalkNotifier:
         # 如果既未找到匹配项，也没有默认值，抛出异常
         raise ValueError(f"未找到项目 '{project_name}' 对应的钉钉Webhook URL，且未设置默认的 Webhook URL。")
 
-    def send_message(self, content: str, msg_type='text', title='通知', is_at_all=False, project_name=None):
+    def send_message(self, content: str, msg_type='text', title='通知', is_at_all=False, project_name=None, url_base = None):
         if not self.enabled:
             logger.info("钉钉推送未启用")
             return
 
         try:
-            post_url = self._get_webhook_url(project_name=project_name)
+            post_url = self._get_webhook_url(project_name=project_name, url_base=url_base)
             headers = {
                 "Content-Type": "application/json",
                 "Charset": "UTF-8"
