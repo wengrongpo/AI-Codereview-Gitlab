@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from urllib.parse import urljoin
 
@@ -28,6 +29,19 @@ def filter_changes(changes: list):
         if any(item.get('new_path', '').endswith(ext) for ext in SUPPORTED_EXTENSIONS)
     ]
     return filtered_changes
+
+
+def slugify_url(original: str) -> str:
+    # Remove URL scheme (http, https, etc.) if present
+    original = re.sub(r'^https?://', '', original)
+
+    # Replace non-alphanumeric characters (except underscore) with underscores
+    target = re.sub(r'[^a-zA-Z0-9]', '_', original)
+
+    # Remove trailing underscore if present
+    target = target.rstrip('_')
+
+    return target
 
 
 class MergeRequestHandler:
@@ -202,7 +216,8 @@ class PushHandler:
             logger.error(f"Failed to add comment: {response.status_code}")
             logger.error(response.text)
 
-    def __repository_commits(self, ref_name: str = "", since: str = "", until: str = "", pre_page: int = 100, page: int = 1):
+    def __repository_commits(self, ref_name: str = "", since: str = "", until: str = "", pre_page: int = 100,
+                             page: int = 1):
         # 获取仓库提交信息
         url = f"{urljoin(f'{self.gitlab_url}/', f'api/v4/projects/{self.project_id}/repository/commits')}?ref_name={ref_name}&since={since}&until={until}&per_page={pre_page}&page={page}"
         headers = {

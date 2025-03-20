@@ -29,7 +29,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: worker
-#    image: sunmh207/ai-codereview-gitlab:1.2.3
+    # image: sunmh207/ai-codereview-gitlab:1.2.3-worker
     volumes_from:
       - app
     env_file:

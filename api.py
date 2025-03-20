@@ -10,6 +10,7 @@ from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 
+from biz.gitlab.webhook_handler import slugify_url
 from biz.queue.worker import handle_merge_request_event, handle_push_event
 from biz.service.review_service import ReviewService
 from biz.utils.im import im_notifier
@@ -130,6 +131,8 @@ def handle_webhook():
         if not gitlab_token:
             return jsonify({'message': 'Missing GitLab access token'}), 400
 
+        gitlab_domain = slugify_url(gitlab_url)
+
         # 打印整个payload数据，或根据需求进行处理
         logger.info(f'Received event: {object_kind}')
         logger.info(f'Payload: {json.dumps(data)}')
@@ -137,14 +140,14 @@ def handle_webhook():
         # 处理Merge Request Hook
         if object_kind == "merge_request":
             # 创建一个新进程进行异步处理
-            handle_queue(handle_merge_request_event, data, gitlab_token, gitlab_url)
+            handle_queue(handle_merge_request_event, data, gitlab_token, gitlab_url, gitlab_domain)
             # 立马返回响应
             return jsonify(
                 {'message': f'Request received(object_kind={object_kind}), will process asynchronously.'}), 200
         elif object_kind == "push":
             # 创建一个新进程进行异步处理
             # TODO check if PUSH_REVIEW_ENABLED is needed here
-            handle_queue(handle_push_event, data, gitlab_token, gitlab_url)
+            handle_queue(handle_push_event, data, gitlab_token, gitlab_url, gitlab_domain)
             # 立马返回响应
             return jsonify(
                 {'message': f'Request received(object_kind={object_kind}), will process asynchronously.'}), 200

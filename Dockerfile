@@ -34,4 +34,4 @@ COPY supervisord.prod.conf /etc/supervisor/conf.d/supervisord.conf
 EXPOSE 5001 5002
 
 FROM base AS worker
-COPY supervisord.worker-default.conf /etc/supervisor/conf.d/supervisord.conf
+COPY supervisord.worker.conf /etc/supervisor/conf.d/supervisord.conf
