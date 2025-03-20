@@ -1,6 +1,7 @@
 import atexit
 import json
 import os
+import re
 import traceback
 from datetime import datetime
 from urllib.parse import urlparse
@@ -131,7 +132,7 @@ def handle_webhook():
         if not gitlab_token:
             return jsonify({'message': 'Missing GitLab access token'}), 400
 
-        gitlab_domain_slug = slugify_url(gitlab_url)
+        gitlab_url_slug = slugify_url(gitlab_url)
 
         # 打印整个payload数据，或根据需求进行处理
         logger.info(f'Received event: {object_kind}')
@@ -140,14 +141,14 @@ def handle_webhook():
         # 处理Merge Request Hook
         if object_kind == "merge_request":
             # 创建一个新进程进行异步处理
-            handle_queue(handle_merge_request_event, data, gitlab_token, gitlab_url, gitlab_domain_slug)
+            handle_queue(handle_merge_request_event, data, gitlab_token, gitlab_url, gitlab_url_slug)
             # 立马返回响应
             return jsonify(
                 {'message': f'Request received(object_kind={object_kind}), will process asynchronously.'}), 200
         elif object_kind == "push":
             # 创建一个新进程进行异步处理
             # TODO check if PUSH_REVIEW_ENABLED is needed here
-            handle_queue(handle_push_event, data, gitlab_token, gitlab_url, gitlab_domain_slug)
+            handle_queue(handle_push_event, data, gitlab_token, gitlab_url, gitlab_url_slug)
             # 立马返回响应
             return jsonify(
                 {'message': f'Request received(object_kind={object_kind}), will process asynchronously.'}), 200
