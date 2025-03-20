@@ -28,10 +28,31 @@ services:
       - app
     env_file:
       - .env
+#    environment:
+#      - WORKER_QUEUE=git_test1_com
+#      - OLLAMA_API_BASE_URL=https://ollama.test1.com:11434
     depends_on:
       redis:
         condition: service_started
     restart: unless-stopped
+
+#  worker2:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#      target: worker
+#    # image: sunmh207/ai-codereview-gitlab:1.2.3-worker
+#    volumes_from:
+#      - app
+#    env_file:
+#      - .env
+#    environment:
+#      - WORKER_QUEUE=git_test2_com
+#      - OLLAMA_API_BASE_URL=https://ollama.test2.com:11434
+#    depends_on:
+#      redis:
+#        condition: service_started
+#    restart: unless-stopped
 
   redis:
     image: redis:alpine
