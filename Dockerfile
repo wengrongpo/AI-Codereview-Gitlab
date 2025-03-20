@@ -13,11 +13,11 @@ COPY requirements.txt .
 # 安装依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY biz .
-COPY core .
-COPY api.py .
-COPY ui.py .
-COPY prompt_templates.yml .
+COPY biz ./biz
+COPY core ./core
+COPY api.py ./api.py
+COPY ui.py ./ui.py
+COPY prompt_templates.yml ./prompt_templates.yml
 RUN mkdir -p log data
 
 # 暴露 Flask 和 Streamlit 的端口
