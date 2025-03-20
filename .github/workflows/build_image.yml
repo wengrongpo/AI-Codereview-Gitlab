@@ -8,7 +8,7 @@ on:
       - v*
 
 jobs:
-  build-and-push-image:
+  build-and-push-images:
     runs-on: ubuntu-latest
 
     permissions:
@@ -19,6 +19,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up QEMU for multi-arch builds
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -26,8 +33,9 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      # Extract tags with suffixes for prod and worker
+      - name: Extract metadata (tags, labels) for Docker (prod)
+        id: meta_prod
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
@@ -37,12 +45,14 @@ jobs:
             type=semver,pattern={{major}}
             type=edge,branch=main
 
-      - name: Build and push Docker image
+      # Build and push multi-arch prod image
+      - name: Build and push prod Docker image (Multi-Arch)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64/v8
+          tags: ${{ steps.meta_prod.outputs.tags }}
+          labels: ${{ steps.meta_prod.outputs.labels }}
           target: prod
