@@ -190,6 +190,7 @@ def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             changes = filter_changes(changes)
             if not changes:
                 logger.info('未检测到PUSH代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
+                return
             review_result = "关注的文件没有修改"
 
             if len(changes) > 0:
@@ -249,6 +250,10 @@ def __handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_u
             # review 代码
             commits_text = ';'.join(commit['title'] for commit in commits)
             review_result = review_code(str(changes), commits_text)
+
+            if "COT ABORT!" in review_result:
+                logger.error('COT ABORT!')
+                return
 
             # 将review结果提交到Gitlab的 notes
             handler.add_merge_request_notes(f'Auto Review Result: \n{review_result}')
