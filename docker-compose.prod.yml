@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: prod
-    image: sunmh207/ai-codereview-gitlab:1.2.3
+    image: sunmh207/ai-codereview-gitlab:1.2.4
     ports:
       - "5001:5001"
       - "5002:5002"
@@ -13,7 +13,7 @@ services:
       - log:/app/log
       - conf:/app/conf
     env_file:
-      - .env
+      - ./conf/.env
     restart: unless-stopped
 
 volumes:
