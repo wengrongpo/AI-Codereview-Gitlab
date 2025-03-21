@@ -2,7 +2,6 @@
 venv/
 test/
 .idea/
-test/docker
 
 log/*
 !log/.gitkeep
