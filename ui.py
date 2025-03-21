@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from biz.service.review_service import ReviewService
 
-load_dotenv()
+load_dotenv("conf/.env")
 
 # 从环境变量中读取用户名和密码
 DASHBOARD_USER = os.getenv("DASHBOARD_USER", "admin")

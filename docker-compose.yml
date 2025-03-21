@@ -11,10 +11,10 @@ services:
     volumes:
       - ./biz:/app/biz
       - ./core:/app/core
+      - ./conf:/app/conf
       - ./data:/app/data
       - ./log:/app/log
       - ./api.py:/app/api.py
-      - ./prompt_templates.yml:/app/prompt_templates.yml
       - ./requirements.txt:/app/requirements.txt
       - ./supervisord.dev.conf:/etc/supervisor/conf.d/supervisord.conf
       - ./ui.py:/app/ui.py

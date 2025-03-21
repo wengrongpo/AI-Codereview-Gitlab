@@ -1,17 +1,14 @@
 import os
 from typing import Dict, List, Optional
 
-from dotenv import load_dotenv
 from zhipuai import ZhipuAI
 
-from core.llm.client.base import BaseClient
-from core.llm.types import NotGiven, NOT_GIVEN
+from biz.llm.client.base import BaseClient
+from biz.llm.types import NotGiven, NOT_GIVEN
 
 
 class ZhipuAIClient(BaseClient):
     def __init__(self, api_key: str = None):
-        if not os.getenv("ZHIPUAI_API_KEY"):
-            load_dotenv()
         self.api_key = api_key or os.getenv("ZHIPUAI_API_KEY")
         if not self.api_key:
             raise ValueError("API key is required. Please provide it or set it in the environment variables.")
