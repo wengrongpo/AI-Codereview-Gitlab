@@ -13,7 +13,7 @@ class CodeReviewer:
 
     def _load_prompts(self) -> dict:
         """加载提示词配置"""
-        prompt_templates_file = "prompt_templates.yml"
+        prompt_templates_file = "conf/prompt_templates.yml"
         with open(prompt_templates_file, "r") as file:
             prompt_templates = yaml.safe_load(file)
             system_prompt = prompt_templates['system_prompt']

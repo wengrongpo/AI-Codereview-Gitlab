@@ -11,6 +11,7 @@ services:
     volumes:
       - data:/app/data
       - log:/app/log
+      - conf:/app/conf
     env_file:
       - .env
     restart: unless-stopped
