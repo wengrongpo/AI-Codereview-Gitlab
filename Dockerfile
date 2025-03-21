@@ -27,7 +27,7 @@ EXPOSE 5001 5002
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 FROM base AS dev
-COPY supervisord.dev.conf /etc/supervisor/conf.d/supervisord.conf
+COPY ./conf/supervisord.dev.conf /etc/supervisor/conf.d/supervisord.conf
 
 FROM base AS prod
-COPY supervisord.prod.conf /etc/supervisor/conf.d/supervisord.conf
+COPY ./conf/supervisord.prod.conf /etc/supervisor/conf.d/supervisord.conf

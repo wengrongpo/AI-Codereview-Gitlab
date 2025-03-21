@@ -21,7 +21,7 @@ from biz.utils.log import logger
 from biz.utils.reporter import Reporter
 from urllib.parse import urlparse
 
-load_dotenv()
+load_dotenv("conf/.env")
 api_app = Flask(__name__)
 
 PUSH_REVIEW_ENABLED = os.environ.get('PUSH_REVIEW_ENABLED', '0') == '1'

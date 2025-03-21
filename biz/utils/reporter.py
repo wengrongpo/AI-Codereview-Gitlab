@@ -1,4 +1,4 @@
-from core.llm.factory import Factory
+from biz.llm.factory import Factory
 
 
 class Reporter:
