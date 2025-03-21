@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
-
+import matplotlib.pyplot as plt
 from biz.service.review_service import ReviewService
 
 load_dotenv("conf/.env")
@@ -24,7 +24,8 @@ def authenticate(username, password):
 
 # 获取数据函数
 def get_data(service_func, authors=None, project_names=None, updated_at_gte=None, updated_at_lte=None, columns=None):
-    df = service_func(authors=authors, project_names=project_names, updated_at_gte=updated_at_gte, updated_at_lte=updated_at_lte)
+    df = service_func(authors=authors, project_names=project_names, updated_at_gte=updated_at_gte,
+                      updated_at_lte=updated_at_lte)
 
     if df.empty:
         return pd.DataFrame(columns=columns)
@@ -72,6 +73,104 @@ def login_page():
                 st.error("用户名或密码错误")
 
 
+# 生成项目提交数量图表
+def generate_project_count_chart(df):
+    if df.empty:
+        st.info("没有数据可供展示")
+        return
+
+    # 计算每个项目的提交数量
+    project_counts = df['project_name'].value_counts().reset_index()
+    project_counts.columns = ['project_name', 'count']
+
+    # 生成颜色列表，每个项目一个颜色
+    colors = plt.colormaps['tab20'].resampled(len(project_counts))
+
+    # 显示提交数量柱状图
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    ax1.bar(
+        project_counts['project_name'],
+        project_counts['count'],
+        color=[colors(i) for i in range(len(project_counts))]
+    )
+    plt.xticks(rotation=45, ha='right', fontsize=26)
+    plt.tight_layout()
+    st.pyplot(fig1)
+
+
+# 生成项目平均分数图表
+def generate_project_score_chart(df):
+    if df.empty:
+        st.info("没有数据可供展示")
+        return
+
+    # 计算每个项目的平均分数
+    project_scores = df.groupby('project_name')['score'].mean().reset_index()
+    project_scores.columns = ['project_name', 'average_score']
+
+    # 生成颜色列表，每个项目一个颜色
+    # colors = plt.cm.get_cmap('Accent', len(project_scores))  # 使用'tab20'颜色映射，适合分类数据
+    colors = plt.colormaps['Accent'].resampled(len(project_scores))
+    # 显示平均分数柱状图
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    ax2.bar(
+        project_scores['project_name'],
+        project_scores['average_score'],
+        color=[colors(i) for i in range(len(project_scores))]
+    )
+    plt.xticks(rotation=45, ha='right', fontsize=26)
+    plt.tight_layout()
+    st.pyplot(fig2)
+
+
+# 生成人员提交数量图表
+def generate_author_count_chart(df):
+    if df.empty:
+        st.info("没有数据可供展示")
+        return
+
+    # 计算每个人员的提交数量
+    author_counts = df['author'].value_counts().reset_index()
+    author_counts.columns = ['author', 'count']
+
+    # 生成颜色列表，每个项目一个颜色
+    colors = plt.colormaps['Paired'].resampled(len(author_counts))
+    # 显示提交数量柱状图
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    ax1.bar(
+        author_counts['author'],
+        author_counts['count'],
+        color=[colors(i) for i in range(len(author_counts))]
+    )
+    plt.xticks(rotation=45, ha='right', fontsize=26)
+    plt.tight_layout()
+    st.pyplot(fig1)
+
+
+# 生成人员平均分数图表
+def generate_author_score_chart(df):
+    if df.empty:
+        st.info("没有数据可供展示")
+        return
+
+    # 计算每个人员的平均分数
+    author_scores = df.groupby('author')['score'].mean().reset_index()
+    author_scores.columns = ['author', 'average_score']
+
+    # 显示平均分数柱状图
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    # 生成颜色列表，每个项目一个颜色
+    colors = plt.colormaps['Pastel1'].resampled(len(author_scores))
+    ax2.bar(
+        author_scores['author'],
+        author_scores['average_score'],
+        color=[colors(i) for i in range(len(author_scores))]
+    )
+    plt.xticks(rotation=45, ha='right', fontsize=26)
+    plt.tight_layout()
+    st.pyplot(fig2)
+
+
 # 主要内容
 def main_page():
     st.markdown("#### 审查日志")
@@ -109,7 +208,8 @@ def main_page():
             with col4:
                 project_names = st.multiselect("项目名", unique_projects, default=[], key=f"{tab}_projects")
 
-            data = get_data(service_func, authors=authors,project_names=project_names, updated_at_gte=int(start_datetime.timestamp()),
+            data = get_data(service_func, authors=authors, project_names=project_names,
+                            updated_at_gte=int(start_datetime.timestamp()),
                             updated_at_lte=int(end_datetime.timestamp()), columns=columns)
             df = pd.DataFrame(data)
 
@@ -122,6 +222,21 @@ def main_page():
             total_records = len(df)
             average_score = df["score"].mean() if not df.empty else 0
             st.markdown(f"**总记录数:** {total_records}，**平均分:** {average_score:.2f}")
+
+            # 创建2x2网格布局展示四个图表
+            row1, row2, row3, row4 = st.columns(4)
+            with row1:
+                st.markdown("<div style='text-align: center;'><b>项目提交次数</b></div>", unsafe_allow_html=True)
+                generate_project_count_chart(df)
+            with row2:
+                st.markdown("<div style='text-align: center;'><b>项目平均分数</b></div>", unsafe_allow_html=True)
+                generate_project_score_chart(df)
+            with row3:
+                st.markdown("<div style='text-align: center;'><b>人员提交次数</b></div>", unsafe_allow_html=True)
+                generate_author_count_chart(df)
+            with row4:
+                st.markdown("<div style='text-align: center;'><b>人员平均分数</b></div>", unsafe_allow_html=True)
+                generate_author_score_chart(df)
 
     # Merge Request 数据展示
     mr_columns = ["project_name", "author", "source_branch", "target_branch", "updated_at", "commit_messages", "score",
