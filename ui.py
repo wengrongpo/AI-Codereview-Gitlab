@@ -16,13 +16,15 @@ USER_CREDENTIALS = {
     DASHBOARD_USER: DASHBOARD_PASSWORD
 }
 
+
 # 登录验证函数
 def authenticate(username, password):
     return username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password
 
+
 # 获取数据函数
-def get_data(service_func, authors=None, updated_at_gte=None, updated_at_lte=None, columns=None):
-    df = service_func(authors=authors, updated_at_gte=updated_at_gte, updated_at_lte=updated_at_lte)
+def get_data(service_func, authors=None, project_names=None, updated_at_gte=None, updated_at_lte=None, columns=None):
+    df = service_func(authors=authors, project_names=project_names, updated_at_gte=updated_at_gte, updated_at_lte=updated_at_lte)
 
     if df.empty:
         return pd.DataFrame(columns=columns)
@@ -36,8 +38,10 @@ def get_data(service_func, authors=None, updated_at_gte=None, updated_at_lte=Non
     data = df[columns]
     return data
 
+
 # Streamlit 配置
 st.set_page_config(layout="wide")
+
 
 # 登录界面
 def login_page():
@@ -83,10 +87,9 @@ def main_page():
     else:
         mr_tab = st.container()
 
-
     def display_data(tab, service_func, columns, column_config):
         with tab:
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
                 start_date = st.date_input("开始日期", start_date_default, key=f"{tab}_start_date")
             with col2:
@@ -100,10 +103,13 @@ def main_page():
             df = pd.DataFrame(data)
 
             unique_authors = sorted(df["author"].dropna().unique().tolist()) if not df.empty else []
+            unique_projects = sorted(df["project_name"].dropna().unique().tolist()) if not df.empty else []
             with col3:
                 authors = st.multiselect("用户名", unique_authors, default=[], key=f"{tab}_authors")
+            with col4:
+                project_names = st.multiselect("项目名", unique_projects, default=[], key=f"{tab}_projects")
 
-            data = get_data(service_func, authors=authors, updated_at_gte=int(start_datetime.timestamp()),
+            data = get_data(service_func, authors=authors,project_names=project_names, updated_at_gte=int(start_datetime.timestamp()),
                             updated_at_lte=int(end_datetime.timestamp()), columns=columns)
             df = pd.DataFrame(data)
 
@@ -116,7 +122,6 @@ def main_page():
             total_records = len(df)
             average_score = df["score"].mean() if not df.empty else 0
             st.markdown(f"**总记录数:** {total_records}，**平均分:** {average_score:.2f}")
-
 
     # Merge Request 数据展示
     mr_columns = ["project_name", "author", "source_branch", "target_branch", "updated_at", "commit_messages", "score",
@@ -149,6 +154,8 @@ def main_page():
         }
 
         display_data(push_tab, ReviewService().get_push_review_logs, push_columns, push_column_config)
+
+
 # 应用入口
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False

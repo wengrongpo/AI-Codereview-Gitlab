@@ -63,7 +63,7 @@ class ReviewService:
             print(f"Error inserting review log: {e}")
 
     @staticmethod
-    def get_mr_review_logs(authors: list = None, updated_at_gte: int = None,
+    def get_mr_review_logs(authors: list = None, project_names: list = None, updated_at_gte: int = None,
                            updated_at_lte: int = None) -> pd.DataFrame:
         """获取符合条件的合并请求审核日志"""
         try:
@@ -79,6 +79,11 @@ class ReviewService:
                     placeholders = ','.join(['?'] * len(authors))
                     query += f" AND author IN ({placeholders})"
                     params.extend(authors)
+
+                if project_names:
+                    placeholders = ','.join(['?'] * len(project_names))
+                    query += f" AND project_name IN ({placeholders})"
+                    params.extend(project_names)
 
                 if updated_at_gte is not None:
                     query += " AND updated_at >= ?"
