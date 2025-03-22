@@ -1,13 +1,22 @@
 services:
-  flask-app:
-    image: sunmh207/ai-codereview-gitlab:1.2.2
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    image: ghcr.io/sunmh207/ai-codereview-gitlab:latest
     ports:
       - "5001:5001"
       - "5002:5002"
     volumes:
-      - ./.env:/app/.env
-      - ./log:/app/log
+      - ./biz:/app/biz
+      - ./conf:/app/conf
+      - ./conf/supervisord.dev.conf:/etc/supervisor/conf.d/supervisord.conf
       - ./data:/app/data
-    environment:
-      - TZ=Asia/Shanghai
+      - ./log:/app/log
+      - ./api.py:/app/api.py
+      - ./requirements.txt:/app/requirements.txt
+      - ./ui.py:/app/ui.py
+    env_file:
+      - ./conf/.env
     restart: unless-stopped
