@@ -2,7 +2,7 @@ from blinker import Signal
 
 from biz.entity.review_entity import MergeRequestReviewEntity, PushReviewEntity
 from biz.service.review_service import ReviewService
-from biz.utils.im import im_notifier
+from biz.utils.im import notifier
 
 # 定义全局事件管理器（事件信号）
 event_manager = {
@@ -31,7 +31,7 @@ def on_merge_request_reviewed(mr_review_entity: MergeRequestReviewEntity):
 
 {mr_review_entity.review_result}
     """
-    im_notifier.send_notification(content=im_msg, msg_type='markdown', title='Merge Request Review',
+    notifier.send_notification(content=im_msg, msg_type='markdown', title='Merge Request Review',
                                   project_name=mr_review_entity.project_name,
                                   gitlab_url_slug=mr_review_entity.gitlab_url_slug)
 
@@ -58,7 +58,7 @@ def on_push_reviewed(entity: PushReviewEntity):
 
     if entity.review_result:
         im_msg += f"#### AI Review 结果: \n {entity.review_result}\n\n"
-    im_notifier.send_notification(content=im_msg, msg_type='markdown',
+    notifier.send_notification(content=im_msg, msg_type='markdown',
                                   title=f"{entity.project_name} Push Event", project_name=entity.project_name,
                                   gitlab_url_slug=entity.gitlab_url_slug)
 

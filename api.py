@@ -18,7 +18,7 @@ from biz.event.event_manager import event_manager
 from biz.gitlab.webhook_handler import MergeRequestHandler, PushHandler
 from biz.service.review_service import ReviewService
 from biz.utils.code_reviewer import CodeReviewer
-from biz.utils.im import im_notifier
+from biz.utils.im import notifier
 from biz.utils.log import logger
 from biz.utils.reporter import Reporter
 
@@ -61,7 +61,7 @@ def daily_report():
         # 生成日报内容
         report_txt = Reporter().generate_report(json.dumps(commits))
         # 发送钉钉通知
-        im_notifier.send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
+        notifier.send_notification(content=report_txt, msg_type="markdown", title="代码提交日报")
 
         # 返回生成的日报内容
         return json.dumps(report_txt, ensure_ascii=False, indent=4)
@@ -221,7 +221,7 @@ def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
 
     except Exception as e:
         error_message = f'服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
-        im_notifier.send_notification(content=error_message)
+        notifier.send_notification(content=error_message)
         logger.error('出现未知错误: %s', error_message)
 
 
@@ -285,7 +285,7 @@ def __handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_u
 
     except Exception as e:
         error_message = f'AI Code Review 服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
-        im_notifier.send_notification(content=error_message)
+        notifier.send_notification(content=error_message)
         logger.error('出现未知错误: %s', error_message)
 
 
