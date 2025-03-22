@@ -7,7 +7,7 @@ from datetime import datetime
 from multiprocessing import Process
 from urllib.parse import urlparse
 
-import tiktoken
+from biz.utils.token_util import count_tokens, truncate_text_by_tokens
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
@@ -208,7 +208,6 @@ def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             # 将review结果提交到Gitlab的 notes
             handler.add_push_notes(f'Auto Review Result: \n{review_result}')
 
-
         event_manager['push_reviewed'].send(PushReviewEntity(
             project_name=webhook_data['project']['name'],
             author=webhook_data['user_username'],
@@ -217,7 +216,7 @@ def __handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str):
             commits=commits,
             score=score,
             review_result=review_result,
-            gitlab_url_slug = slugify_url(gitlab_url),
+            gitlab_url_slug=slugify_url(gitlab_url),
         ))
 
     except Exception as e:
@@ -277,7 +276,7 @@ def __handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_u
                     score=CodeReviewer.parse_review_score(review_text=review_result),
                     url=webhook_data['object_attributes']['url'],
                     review_result=review_result,
-                    gitlab_url_slug = slugify_url(gitlab_url),
+                    gitlab_url_slug=slugify_url(gitlab_url),
                 )
             )
 
@@ -308,9 +307,6 @@ def filter_changes(changes: list):
     ]
     return filtered_changes
 
-def count_tokens(text: str) -> int:
-    encoding = tiktoken.get_encoding("cl100k_base")  # 适用于 OpenAI GPT 系列
-    return len(encoding.encode(text))
 
 def review_code(changes_text: str, commits_text: str = '') -> str:
     # 如果超长，取前REVIEW_MAX_TOKENS个token
@@ -320,13 +316,10 @@ def review_code(changes_text: str, commits_text: str = '') -> str:
         logger.info('代码为空, diffs_text = %', str(changes_text))
         return '代码为空'
 
-    # 计算 token 数量
+    # 计算tokens数量，如果超过REVIEW_MAX_TOKENS，截断changes_text
     tokens_count = count_tokens(changes_text)
     if tokens_count > review_max_tokens:
-        encoding = tiktoken.get_encoding("cl100k_base")
-        truncated_tokens = encoding.encode(changes_text)[:review_max_tokens]
-        changes_text = encoding.decode(truncated_tokens)
-        logger.info(f'文本超长，截断后 content: {changes_text}')
+        changes_text = truncate_text_by_tokens(changes_text, review_max_tokens)
 
     review_result = CodeReviewer().review_code(changes_text, commits_text).strip()
     if review_result.startswith("```markdown") and review_result.endswith("```"):

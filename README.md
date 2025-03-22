@@ -23,7 +23,9 @@
 
 ## 原理
 
-当用户在 GitLab 上提交代码（如 Merge Request 或 Push 操作）时，GitLab 将自动触发 webhook 事件，调用本系统的接口。系统随后通过第三方大模型对代码进行审查，并将审查结果直接反馈到对应的 Merge Request 或 Commit 的 Note 中，便于团队查看和处理。
+当用户在 GitLab 上提交代码（如 Merge Request 或 Push 操作）时，GitLab 将自动触发 webhook
+事件，调用本系统的接口。系统随后通过第三方大模型对代码进行审查，并将审查结果直接反馈到对应的 Merge Request 或 Commit 的
+Note 中，便于团队查看和处理。
 
 ![流程图](./doc/img/process.png)
 
@@ -158,7 +160,19 @@ streamlit run ui.py --server.port=5002 --server.address=0.0.0.0
   FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/xxx #替换为你的Webhook URL
   ```
 
-## 常见问题
+## 其它
+
+**1.如何review代码结构?**
+
+可通过命令工具对代码结构进行检查，命令如下：
+
+```aiignore
+python -m biz.cmd.review
+```
+
+然后按照提示进行操作即可。
+
+**2.其它问题**
 
 参见 [常见问题](doc/faq.md)
 
