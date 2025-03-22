@@ -19,7 +19,6 @@ COPY api.py ./api.py
 COPY ui.py ./ui.py
 COPY conf/prompt_templates.yml ./conf/prompt_templates.yml
 
-
 # 暴露 Flask 和 Streamlit 的端口
 EXPOSE 5001 5002
 
@@ -31,3 +30,6 @@ COPY ./conf/supervisord.dev.conf /etc/supervisor/conf.d/supervisord.conf
 
 FROM base AS prod
 COPY ./conf/supervisord.prod.conf /etc/supervisor/conf.d/supervisord.conf
+
+FROM base AS worker
+COPY ./conf/supervisord.worker.conf /etc/supervisor/conf.d/supervisord.conf
