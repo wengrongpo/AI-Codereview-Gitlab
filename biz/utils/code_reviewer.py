@@ -16,8 +16,8 @@ class CodeReviewer:
         prompt_templates_file = "conf/prompt_templates.yml"
         with open(prompt_templates_file, "r") as file:
             prompt_templates = yaml.safe_load(file)
-            system_prompt = prompt_templates['system_prompt']
-            user_prompt = prompt_templates['user_prompt']
+            system_prompt = prompt_templates['code_review_prompt']['system_prompt']
+            user_prompt = prompt_templates['code_review_prompt']['user_prompt']
 
         if not system_prompt or not user_prompt:
             logger.warning(f"未找到提示词配置{prompt_templates_file}")

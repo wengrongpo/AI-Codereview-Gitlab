@@ -1,3 +1,4 @@
+Flask==3.0.3
 APScheduler==3.10.4
 Flask==3.0.3
 httpx[socks]
@@ -5,6 +6,7 @@ matplotlib==3.10.1
 ollama==0.4.7
 openai==1.59.3
 pandas==2.2.3
+pathspec==0.12.1
 requests==2.32.3
 spark-ai-python==0.4.5
 streamlit==1.42.2
