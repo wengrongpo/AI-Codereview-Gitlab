@@ -5,7 +5,9 @@ import re
 import traceback
 from datetime import datetime
 from multiprocessing import Process
+from urllib.parse import urlparse
 
+import tiktoken
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
@@ -19,10 +21,6 @@ from biz.utils.code_reviewer import CodeReviewer
 from biz.utils.im import im_notifier
 from biz.utils.log import logger
 from biz.utils.reporter import Reporter
-from urllib.parse import urlparse
-
-import tiktoken
-
 
 load_dotenv("conf/.env")
 api_app = Flask(__name__)
