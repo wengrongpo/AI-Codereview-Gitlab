@@ -5,7 +5,9 @@ import re
 import traceback
 from datetime import datetime
 from multiprocessing import Process
+from urllib.parse import urlparse
 
+import tiktoken
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
@@ -19,7 +21,6 @@ from biz.utils.code_reviewer import CodeReviewer
 from biz.utils.im import im_notifier
 from biz.utils.log import logger
 from biz.utils.reporter import Reporter
-from urllib.parse import urlparse
 
 load_dotenv("conf/.env")
 api_app = Flask(__name__)
@@ -307,18 +308,26 @@ def filter_changes(changes: list):
     ]
     return filtered_changes
 
+def count_tokens(text: str) -> int:
+    encoding = tiktoken.get_encoding("cl100k_base")  # 适用于 OpenAI GPT 系列
+    return len(encoding.encode(text))
 
 def review_code(changes_text: str, commits_text: str = '') -> str:
-    # 如果超长，取前REVIEW_MAX_LENGTH字符
-    review_max_length = int(os.getenv('REVIEW_MAX_LENGTH', 5000))
+    # 如果超长，取前REVIEW_MAX_TOKENS个token
+    review_max_tokens = int(os.getenv('REVIEW_MAX_TOKENS', 10000))
     # 如果changes为空,打印日志
     if not changes_text:
         logger.info('代码为空, diffs_text = %', str(changes_text))
         return '代码为空'
 
-    if len(changes_text) > review_max_length:
-        changes_text = changes_text[:review_max_length]
-        logger.info(f'文本超长，截段后content: {changes_text}')
+    # 计算 token 数量
+    tokens_count = count_tokens(changes_text)
+    if tokens_count > review_max_tokens:
+        encoding = tiktoken.get_encoding("cl100k_base")
+        truncated_tokens = encoding.encode(changes_text)[:review_max_tokens]
+        changes_text = encoding.decode(truncated_tokens)
+        logger.info(f'文本超长，截断后 content: {changes_text}')
+
     review_result = CodeReviewer().review_code(changes_text, commits_text).strip()
     if review_result.startswith("```markdown") and review_result.endswith("```"):
         return review_result[11:-3].strip()
