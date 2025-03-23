@@ -20,7 +20,8 @@ class BaseReviewer(abc.ABC):
         """加载提示词配置"""
         prompt_templates_file = "conf/prompt_templates.yml"
         try:
-            with open(prompt_templates_file, "r") as file:
+            # 在打开 YAML 文件时显式指定编码为 UTF-8，避免使用系统默认的 GBK 编码。
+            with open(prompt_templates_file, "r", encoding="utf-8") as file:
                 prompts = yaml.safe_load(file).get(prompt_key, {})
                 system_prompt = prompts.get("system_prompt")
                 user_prompt = prompts.get("user_prompt")
@@ -55,7 +56,7 @@ class CodeReviewer(BaseReviewer):
     def __init__(self):
         super().__init__("code_review_prompt")
 
-    def review_and_strip_code(self, changes_text: str, commits_text: str = '') -> str:
+    def review_and_strip_code(self, changes_text: str, commits_text: str = "") -> str:
         """
         Review判断changes_text超出取前REVIEW_MAX_TOKENS个token，超出则截断changes_text，
         调用review_code方法，返回review_result，如果review_result是markdown格式，则去掉头尾的```
@@ -64,11 +65,11 @@ class CodeReviewer(BaseReviewer):
         :return:
         """
         # 如果超长，取前REVIEW_MAX_TOKENS个token
-        review_max_tokens = int(os.getenv('REVIEW_MAX_TOKENS', 10000))
+        review_max_tokens = int(os.getenv("REVIEW_MAX_TOKENS", 10000))
         # 如果changes为空,打印日志
         if not changes_text:
-            logger.info('代码为空, diffs_text = %', str(changes_text))
-            return '代码为空'
+            logger.info("代码为空, diffs_text = %", str(changes_text))
+            return "代码为空"
 
         # 计算tokens数量，如果超过REVIEW_MAX_TOKENS，截断changes_text
         tokens_count = count_tokens(changes_text)
@@ -87,8 +88,7 @@ class CodeReviewer(BaseReviewer):
             {
                 "role": "user",
                 "content": self.prompts["user_message"]["content"].format(
-                    diffs_text=diffs_text,
-                    commits_text=commits_text
+                    diffs_text=diffs_text, commits_text=commits_text
                 ),
             },
         ]
