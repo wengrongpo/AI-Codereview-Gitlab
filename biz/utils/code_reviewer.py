@@ -102,23 +102,3 @@ class CodeReviewer(BaseReviewer):
         match = re.search(r"总分[:：]\s*(\d+)分?", review_text)
         return int(match.group(1)) if match else 0
 
-
-class CodeBaseReviewer(BaseReviewer):
-    """代码库级别的审查"""
-
-    def __init__(self):
-        super().__init__("codebase_review_prompt")
-
-    def review_code(self, language: str, directory_structure: str) -> str:
-        """Review 代码库并返回结果"""
-        messages = [
-            self.prompts["system_message"],
-            {
-                "role": "user",
-                "content": self.prompts["user_message"]["content"].format(
-                    language=language,
-                    directory_structure=directory_structure,
-                ),
-            },
-        ]
-        return self.call_llm(messages)
