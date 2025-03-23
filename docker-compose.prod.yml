@@ -11,7 +11,6 @@ services:
     volumes:
       - data:/app/data
       - log:/app/log
-      - conf:/app/conf
     env_file:
       - ./conf/.env
     depends_on:
@@ -64,5 +63,4 @@ services:
 volumes:
   data:
   log:
-  conf:
   redis_data:
