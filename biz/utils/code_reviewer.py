@@ -1,3 +1,4 @@
+import os
 import re
 import yaml
 import abc
@@ -5,6 +6,7 @@ from typing import Dict, Any, List
 
 from biz.utils.log import logger
 from biz.llm.factory import Factory
+from biz.utils.token_util import count_tokens, truncate_text_by_tokens
 
 
 class BaseReviewer(abc.ABC):
@@ -52,6 +54,31 @@ class CodeReviewer(BaseReviewer):
 
     def __init__(self):
         super().__init__("code_review_prompt")
+
+    def review_and_strip_code(self, changes_text: str, commits_text: str = '') -> str:
+        """
+        Review判断changes_text超出取前REVIEW_MAX_TOKENS个token，超出则截断changes_text，
+        调用review_code方法，返回review_result，如果review_result是markdown格式，则去掉头尾的```
+        :param changes_text:
+        :param commits_text:
+        :return:
+        """
+        # 如果超长，取前REVIEW_MAX_TOKENS个token
+        review_max_tokens = int(os.getenv('REVIEW_MAX_TOKENS', 10000))
+        # 如果changes为空,打印日志
+        if not changes_text:
+            logger.info('代码为空, diffs_text = %', str(changes_text))
+            return '代码为空'
+
+        # 计算tokens数量，如果超过REVIEW_MAX_TOKENS，截断changes_text
+        tokens_count = count_tokens(changes_text)
+        if tokens_count > review_max_tokens:
+            changes_text = truncate_text_by_tokens(changes_text, review_max_tokens)
+
+        review_result = self.review_code(changes_text, commits_text).strip()
+        if review_result.startswith("```markdown") and review_result.endswith("```"):
+            return review_result[11:-3].strip()
+        return review_result
 
     def review_code(self, diffs_text: str, commits_text: str = "") -> str:
         """Review 代码并返回结果"""

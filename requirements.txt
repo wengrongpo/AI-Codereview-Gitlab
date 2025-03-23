@@ -12,3 +12,4 @@ spark-ai-python==0.4.5
 streamlit==1.42.2
 tiktoken==0.9.0
 zhipuai==2.1.5.20230904
+rq==2.1.0
