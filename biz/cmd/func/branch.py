@@ -66,7 +66,7 @@ class BranchReviewFunc(BaseReviewFunc):
         # 获取 GitLab 项目 URL
         while True:
             gitlab_project_url = input(
-                "请输入 GitLab 项目的完整 URL (例如 https://gitlab.yj.edusoho.cn/root/test): ").strip()
+                "请输入 GitLab 项目的完整 URL (例如 https://gitlab.example.com/root/test): ").strip()
             if self.validate_gitlab_url(gitlab_project_url):
                 self.gitlab_url, self.project_id = self.parse_gitlab_url(gitlab_project_url)
                 break
