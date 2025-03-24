@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 
 from biz.gitlab.webhook_handler import slugify_url
-from biz.queue.worker import handle_merge_request_event, handle_push_event
+from biz.queue.worker import handle_merge_request_event, handle_push_event, handle_github_pull_request_event, handle_github_push_event
 from biz.service.review_service import ReviewService
 from biz.utils.im import notifier
 from biz.utils.log import logger
@@ -108,7 +108,49 @@ def handle_webhook():
         if not data:
             return jsonify({"error": "Invalid JSON"}), 400
 
-        object_kind = data.get("object_kind")
+        # 判断是GitLab还是GitHub的webhook
+        webhook_source = request.headers.get('X-GitHub-Event')
+        
+        if webhook_source:  # GitHub webhook
+            return handle_github_webhook(webhook_source, data)
+        else:  # GitLab webhook
+            return handle_gitlab_webhook(data)
+    else:
+        return jsonify({'message': 'Invalid data format'}), 400
+
+def handle_github_webhook(event_type, data):
+    # 获取GitHub配置
+    github_token = os.getenv('GITHUB_ACCESS_TOKEN') or request.headers.get('X-GitHub-Token')
+    if not github_token:
+        return jsonify({'message': 'Missing GitHub access token'}), 400
+        
+    github_url = os.getenv('GITHUB_URL') or 'https://github.com'
+    
+    # 打印整个payload数据
+    logger.info(f'Received GitHub event: {event_type}')
+    logger.info(f'Payload: {json.dumps(data)}')
+    
+    if event_type == "pull_request":
+        # 创建一个新进程进行异步处理
+        process = Process(target=__handle_github_pull_request_event, args=(data, github_token, github_url))
+        process.start()
+        # 立马返回响应
+        return jsonify({'message': f'GitHub request received(event_type={event_type}), will process asynchronously.'}), 200
+    elif event_type == "push":
+        # 创建一个新进程进行异步处理
+        process = Process(target=__handle_github_push_event, args=(data, github_token, github_url))
+        process.start()
+        # 立马返回响应
+        return jsonify({'message': f'GitHub request received(event_type={event_type}), will process asynchronously.'}), 200
+    else:
+        error_message = f'Only pull_request and push events are supported for GitHub webhook, but received: {event_type}.'
+        logger.error(error_message)
+        return jsonify(error_message), 400
+    else:
+        return jsonify({'message': 'Invalid data format'}), 400
+
+def handle_gitlab_webhook(data):
+    object_kind = data.get("object_kind")
 
         # 优先从请求头获取，如果没有，则从环境变量获取，如果没有，则从推送事件中获取
         gitlab_url = os.getenv('GITLAB_URL') or request.headers.get('X-Gitlab-Instance')
