@@ -5,6 +5,7 @@ from biz.llm.client.deepseek import DeepSeekClient
 from biz.llm.client.ollama_client import OllamaClient
 from biz.llm.client.openai import OpenAIClient
 from biz.llm.client.zhipuai import ZhipuAIClient
+from biz.utils.log import logger
 
 
 class Factory:
@@ -20,6 +21,7 @@ class Factory:
 
         provider_func = chat_model_providers.get(provider)
         if provider_func:
+            logger.info(f"Successfully loaded LLM provider: {provider}")
             return provider_func()
         else:
             raise Exception(f'Unknown chat model provider: {provider}')
