@@ -8,6 +8,9 @@ from biz.utils.token_util import count_tokens, truncate_text_by_tokens
 
 
 class BaseReviewFunc(abc.ABC):
+    """
+    Review功能的基础类，定义了一些通用的方法和属性。
+    """
     DEFAULT_REVIEW_MAX_TOKENS = 10000
 
     def __init__(self):

@@ -9,6 +9,9 @@ from biz.utils.dir_util import get_directory_tree
 
 
 class DirectoryReviewFunc(BaseReviewFunc):
+    """
+    对项目的目录结构进行审查的功能。
+    """
     SUPPORTED_LANGUAGES = ["python", "java", "php", "vue"]
     SYSTEM_PROMPT = f"""
         你是一位资深的软件架构师，本次任务是对一个代码库进行审查，具体要求如下：

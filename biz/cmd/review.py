@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 
+from biz.cmd.func.branch import BranchReviewFunc
 from biz.cmd.func.directory import DirectoryReviewFunc
 
 
@@ -28,4 +29,5 @@ if __name__ == "__main__":
         func.process()
 
     elif choice == 2:
-        print("功能开发中...")
+        func = BranchReviewFunc()
+        func.process()
