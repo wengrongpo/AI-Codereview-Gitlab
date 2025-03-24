@@ -168,3 +168,6 @@ python -m biz.cmd.review
   <img src="doc/img/wechat_group.jpg" width="400" /> 
 </p>
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=sunmh207/AI-Codereview-Gitlab&type=Timeline)](https://www.star-history.com/#sunmh207/AI-Codereview-Gitlab&Timeline)
