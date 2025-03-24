@@ -145,7 +145,7 @@ def handle_github_push_event(webhook_data: dict, github_token: str, github_url: 
 
             if len(changes) > 0:
                 commits_text = ';'.join(commit.get('message', '').strip() for commit in commits)
-                review_result = review_code(str(changes), commits_text)
+                review_result = CodeReviewer().review_and_strip_code(str(changes), commits_text)
                 score = CodeReviewer.parse_review_score(review_text=review_result)
             # 将review结果提交到GitHub的 notes
             handler.add_push_notes(f'Auto Review Result: \n{review_result}')
@@ -162,7 +162,7 @@ def handle_github_push_event(webhook_data: dict, github_token: str, github_url: 
 
     except Exception as e:
         error_message = f'服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
-        im_notifier.send_notification(content=error_message)
+        notifier.send_notification(content=error_message)
         logger.error('出现未知错误: %s', error_message)
 
 
@@ -196,7 +196,7 @@ def handle_github_pull_request_event(webhook_data: dict, github_token: str, gith
 
             # review 代码
             commits_text = ';'.join(commit['title'] for commit in commits)
-            review_result = review_code(str(changes), commits_text)
+            review_result = CodeReviewer().review_and_strip_code(str(changes), commits_text)
 
             # 将review结果提交到GitHub的 notes
             handler.add_pull_request_notes(f'Auto Review Result: \n{review_result}')
@@ -217,5 +217,5 @@ def handle_github_pull_request_event(webhook_data: dict, github_token: str, gith
 
     except Exception as e:
         error_message = f'服务出现未知错误: {str(e)}\n{traceback.format_exc()}'
-        im_notifier.send_notification(content=error_message)
+        notifier.send_notification(content=error_message)
         logger.error('出现未知错误: %s', error_message)

@@ -131,23 +131,19 @@ def handle_github_webhook(event_type, data):
     logger.info(f'Payload: {json.dumps(data)}')
     
     if event_type == "pull_request":
-        # 创建一个新进程进行异步处理
-        process = Process(target=__handle_github_pull_request_event, args=(data, github_token, github_url))
-        process.start()
+        # 使用handle_queue进行异步处理
+        handle_queue(handle_github_pull_request_event, data, github_token, github_url)
         # 立马返回响应
         return jsonify({'message': f'GitHub request received(event_type={event_type}), will process asynchronously.'}), 200
     elif event_type == "push":
-        # 创建一个新进程进行异步处理
-        process = Process(target=__handle_github_push_event, args=(data, github_token, github_url))
-        process.start()
+        # 使用handle_queue进行异步处理
+        handle_queue(handle_github_push_event, data, github_token, github_url)
         # 立马返回响应
         return jsonify({'message': f'GitHub request received(event_type={event_type}), will process asynchronously.'}), 200
     else:
         error_message = f'Only pull_request and push events are supported for GitHub webhook, but received: {event_type}.'
         logger.error(error_message)
         return jsonify(error_message), 400
-    else:
-        return jsonify({'message': 'Invalid data format'}), 400
 
 def handle_gitlab_webhook(data):
     object_kind = data.get("object_kind")
@@ -197,9 +193,6 @@ def handle_gitlab_webhook(data):
             error_message = f'Only merge_request and push events are supported (both Webhook and System Hook), but received: {object_kind}.'
             logger.error(error_message)
             return jsonify(error_message), 400
-    else:
-        return jsonify({'message': 'Invalid data format'}), 400
-
 
 if __name__ == '__main__':
     # 启动定时任务调度器
