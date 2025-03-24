@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev
+      target: app
     image: ghcr.io/sunmh207/ai-codereview-gitlab:1.3.2
     ports:
       - "5001:5001"
