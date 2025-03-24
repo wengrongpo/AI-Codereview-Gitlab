@@ -11,11 +11,6 @@ class BaseReviewFunc(abc.ABC):
     """
     Review功能的基础类，定义了一些通用的方法和属性。
     """
-    DEFAULT_REVIEW_MAX_TOKENS = 10000
-
-    def __init__(self):
-        self.client = Factory().getClient()
-        self.review_max_tokens = int(os.getenv('REVIEW_MAX_TOKENS', self.DEFAULT_REVIEW_MAX_TOKENS))
 
     def get_user_input(self, prompt: str, default=None, input_type=str):
         """
@@ -47,6 +42,24 @@ class BaseReviewFunc(abc.ABC):
                 return False
             else:
                 print("请输入 'y' 或 'n' 确认。")
+
+    @abstractmethod
+    def process(self):
+        """
+        处理逻辑的入口方法，子类需要实现具体的处理逻辑。
+        """
+        raise NotImplementedError
+
+
+class LLMReviewFunc(BaseReviewFunc):
+    """
+    基于LLM的Review功能的基础类，定义了一些通用的方法和属性。
+    """
+    DEFAULT_REVIEW_MAX_TOKENS = 10000
+
+    def __init__(self):
+        self.client = Factory().getClient()
+        self.review_max_tokens = int(os.getenv('REVIEW_MAX_TOKENS', self.DEFAULT_REVIEW_MAX_TOKENS))
 
     def call_llm(self, messages: List[Dict[str, Any]]) -> str:
         print(f"向 AI请求, messages: {messages}")
@@ -80,12 +93,5 @@ class BaseReviewFunc(abc.ABC):
 
         Returns:
             List[Dict[str, Any]]: 包含提示信息的字典列表。
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def process(self):
-        """
-        处理逻辑的入口方法，子类需要实现具体的处理逻辑。
         """
         raise NotImplementedError
