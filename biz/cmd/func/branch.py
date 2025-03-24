@@ -2,6 +2,7 @@ import os
 import re
 from pathlib import Path
 from typing import List, Dict, Any
+from urllib.parse import urlparse
 
 from gitlab import Gitlab
 from pathspec import PathSpec, GitIgnorePattern
@@ -39,23 +40,22 @@ class BranchReviewFunc(BaseReviewFunc):
         self.access_token = os.getenv("GITLAB_ACCESS_TOKEN", None)
         self.user_prompt = None
 
-    def validate_gitlab_url(self, url):
-        """
-        验证 GitLab 项目 URL 是否有效。
-        """
-        # 简单的正则表达式验证 URL 格式
-        pattern = r"^https?://[^/]+/[^/]+/[^/]+$"
-        return re.match(pattern, url) is not None
 
-    def parse_gitlab_url(self, url):
+    def parse_gitlab_url(self, url: str):
         """
         解析 GitLab 项目 URL，提取 gitlab_url 和 project_id。
         """
-        # 提取 GitLab 实例的基础 URL
-        gitlab_url = re.match(r"^(https?://[^/]+)", url).group(1)
+        parsed_url = urlparse(url)
 
-        # 提取项目路径（如 root/test）
-        project_path = re.sub(r"^https?://[^/]+/", "", url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise ValueError("❌ 无效的 GitLab 项目 URL，请确保 URL 格式正确")
+
+        gitlab_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        project_path = parsed_url.path.lstrip("/").split("/-/")[0].split("/tree/")[0].split("/blob/")[0]
+        project_path = project_path.rstrip("/").rstrip(".git")
+
+        if not project_path or "/" not in project_path:
+            raise ValueError("❌ 无法提取 GitLab 项目路径，请检查 URL 是否正确")
 
         return gitlab_url, project_path
 
@@ -67,10 +67,11 @@ class BranchReviewFunc(BaseReviewFunc):
         while True:
             gitlab_project_url = input(
                 "请输入 GitLab 项目的完整 URL (例如 https://gitlab.example.com/root/test): ").strip()
-            if self.validate_gitlab_url(gitlab_project_url):
+            try:
                 self.gitlab_url, self.project_id = self.parse_gitlab_url(gitlab_project_url)
                 break
-            print("❌ 无效的 GitLab 项目 URL，请确保 URL 格式正确")
+            except ValueError as e:
+                print(e)
 
             # 如果环境变量中没有访问令牌，则提示用户输入
             if not self.access_token:
@@ -93,12 +94,14 @@ class BranchReviewFunc(BaseReviewFunc):
 
     def process(self):
         self.parse_arguments()
+        print("self.gitlab_url", self.gitlab_url)
+        print("self.access_token",self.access_token)
         gl = Gitlab(self.gitlab_url, private_token=self.access_token)
         project = gl.projects.get(self.project_id)
 
         # 3. 获取所有分支
         branches = project.branches.list(all=True)  # all=True 确保获取所有分支
-        branch_names = str([branch.name for branch in branches])
+        branch_names = "\n".join([branch.name for branch in branches])
 
         print("分支列表:\n", branch_names)
 
@@ -107,3 +110,9 @@ class BranchReviewFunc(BaseReviewFunc):
             print("Review 结果:\n", result)
         else:
             print("用户取消操作，退出程序。")
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv("conf/.env")
+    func = BranchReviewFunc()
+    func.process()
