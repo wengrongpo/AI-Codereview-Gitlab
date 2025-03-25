@@ -49,8 +49,8 @@ DEEPSEEK_API_KEY={YOUR_DEEPSEEK_API_KEY}
 
 #支持review的文件类型(未配置的文件类型不会被审查)
 SUPPORTED_EXTENSIONS=.java,.py,.php,.yml
-#提交给大模型的最长字符数,超出的部分会截断,防止大模型处理内容过长或Token消耗过多
-REVIEW_MAX_LENGTH=20000
+#限制提交给大模型的Token最大数量,超出设定值的部分会自动截断,防止大模型处理内容过长或Token消耗过多
+REVIEW_MAX_TOKENS=10000
 
 #钉钉消息推送: 0不发送钉钉消息,1发送钉钉消息
 DINGTALK_ENABLED=0
@@ -111,13 +111,13 @@ streamlit run ui.py --server.port=5002 --server.address=0.0.0.0
 
 ### 配置 GitLab Webhook
 
-#### 1. 创建Access Token**
+#### 1. 创建Access Token
 
 方法一：在 GitLab 个人设置中，创建一个 Personal Access Token。
 
 方法二：在 GitLab 项目设置中，创建Project Access Token
 
-#### 2. 配置 Webhook**
+#### 2. 配置 Webhook
 
 在 GitLab 项目设置中，配置 Webhook：
 
@@ -125,7 +125,14 @@ streamlit run ui.py --server.port=5002 --server.address=0.0.0.0
 - Trigger Events：勾选 Push Events 和 Merge Request Events (不要勾选其它Event)
 - Secret Token：上面配置的 Access Token(可选)
 
-备注：系统会优先使用.env中的GITLAB_ACCESS_TOKEN，如果未找到，则使用Webhook 传递的Secret Token
+**备注**
+
+1. Token使用优先级
+  - 系统优先使用 .env 文件中的 GITLAB_ACCESS_TOKEN。
+  - 如果 .env 文件中没有配置 GITLAB_ACCESS_TOKEN，则使用 Webhook 传递的Secret Token。
+2. 网络访问要求
+  - 请确保 GitLab 能够访问本系统。
+  - 若内网环境受限，建议将系统部署在外网服务器上。
 
 ### 配置消息推送
 
