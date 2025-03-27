@@ -1,17 +1,14 @@
 import os
 import re
-from pathlib import Path
 from typing import List, Dict, Any
 from urllib.parse import urlparse
 
 from gitlab import Gitlab
-from pathspec import PathSpec, GitIgnorePattern
 
-from biz.cmd.func.base import BaseReviewFunc
-from biz.utils.dir_util import get_directory_tree
+from biz.cmd.func.base import LLMReviewFunc
 
 
-class BranchReviewFunc(BaseReviewFunc):
+class BranchReviewFunc(LLMReviewFunc):
     """
     对代码分支进行审查。
     """
@@ -40,7 +37,6 @@ class BranchReviewFunc(BaseReviewFunc):
         self.access_token = os.getenv("GITLAB_ACCESS_TOKEN", None)
         self.user_prompt = None
 
-
     def parse_gitlab_url(self, url: str):
         """
         解析 GitLab 项目 URL，提取 gitlab_url 和 project_id。
@@ -51,13 +47,16 @@ class BranchReviewFunc(BaseReviewFunc):
             raise ValueError("❌ 无效的 GitLab 项目 URL，请确保 URL 格式正确")
 
         gitlab_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        project_path = parsed_url.path.lstrip("/").split("/-/")[0].split("/tree/")[0].split("/blob/")[0]
-        project_path = project_path.rstrip("/").rstrip(".git")
 
-        if not project_path or "/" not in project_path:
+        # 预处理路径，去掉末尾 `/` 和 `.git`
+        project_path = parsed_url.path.strip("/").removesuffix(".git")
+
+        # 通过正则匹配项目路径，忽略 `/-/tree/`、`/-/blob/` 之后的部分
+        match = re.match(r"^([^/]+/[^/]+)", project_path)
+        if not match:
             raise ValueError("❌ 无法提取 GitLab 项目路径，请检查 URL 是否正确")
 
-        return gitlab_url, project_path
+        return gitlab_url, match.group(1)
 
     def parse_arguments(self):
         """
@@ -92,10 +91,18 @@ class BranchReviewFunc(BaseReviewFunc):
             {"role": "user", "content": self.user_prompt},
         ]
 
+    def mask_token(self,token, visible_start=4, visible_end=4, mask_char="*"):
+        if len(token) <= visible_start + visible_end:
+            return token  # 太短的 token 不脱敏
+
+        masked_part = mask_char * (len(token) - visible_start - visible_end)
+        return token[:visible_start] + masked_part + token[-visible_end:]
+
     def process(self):
         self.parse_arguments()
         print("self.gitlab_url", self.gitlab_url)
-        print("self.access_token",self.access_token)
+        print("self.access_token",self.mask_token(self.access_token))
+        print("self.project_id", self.project_id)
         gl = Gitlab(self.gitlab_url, private_token=self.access_token)
         project = gl.projects.get(self.project_id)
 

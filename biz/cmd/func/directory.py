@@ -4,11 +4,11 @@ from typing import List, Dict, Any
 
 from pathspec import PathSpec, GitIgnorePattern
 
-from biz.cmd.func.base import BaseReviewFunc
+from biz.cmd.func.base import LLMReviewFunc
 from biz.utils.dir_util import get_directory_tree
 
 
-class DirectoryReviewFunc(BaseReviewFunc):
+class DirectoryReviewFunc(LLMReviewFunc):
     """
     对项目的目录结构进行审查的功能。
     """
