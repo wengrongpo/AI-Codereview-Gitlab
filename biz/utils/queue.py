@@ -1,13 +1,11 @@
 import os
 from multiprocessing import Process
 
-from dotenv import load_dotenv
 from redis import Redis
 from rq import Queue
 
 from biz.utils.log import logger
 
-load_dotenv()
 queue_driver = os.getenv('QUEUE_DRIVER', 'async')
 
 if queue_driver == 'rq':
