@@ -40,24 +40,30 @@ Note 中，便于团队查看和处理。
 
 ### 方案一：Docker 部署
 
-**1. 创建.env文件**
+**1. 准备环境文件**
 
-复制本项目 .env.dist 文件内容到本地 .env 文件，并根据实际情况修改, 部分内容如下：
+- 克隆项目仓库：
+```aiignore
+git clone https://github.com/sunmh207/AI-Codereview-Gitlab.git
+cd AI-Codereview-Gitlab
+```
+
+- 创建配置文件：
+```aiignore
+cp conf/.env.dist conf/.env
+```
+
+- 编辑 conf/.env 文件，配置以下关键参数：
 
 ```bash
-#服务端口
-SERVER_PORT=5001
-
-#大模型供应商配置,支持 zhipuai , openai , deepseek or ollama
+#大模型供应商配置,支持 zhipuai , openai , deepseek 和 ollama
 LLM_PROVIDER=deepseek
 
 #DeepSeek
 DEEPSEEK_API_KEY={YOUR_DEEPSEEK_API_KEY}
 
 #支持review的文件类型(未配置的文件类型不会被审查)
-SUPPORTED_EXTENSIONS=.java,.py,.php,.yml
-#限制提交给大模型的Token最大数量,超出设定值的部分会自动截断,防止大模型处理内容过长或Token消耗过多
-REVIEW_MAX_TOKENS=10000
+SUPPORTED_EXTENSIONS=.java,.py,.php,.yml,.vue,.go,.c,.cpp,.h,.js,.css,.md,.sql
 
 #钉钉消息推送: 0不发送钉钉消息,1发送钉钉消息
 DINGTALK_ENABLED=0
@@ -67,19 +73,20 @@ DINGTALK_WEBHOOK_URL={YOUR_WDINGTALK_WEBHOOK_URL}
 GITLAB_ACCESS_TOKEN={YOUR_GITLAB_ACCESS_TOKEN}
 ```
 
-**2. 启动docker容器**
+**2. 启动服务**
 
 ```bash
-git clone https://github.com/sunmh207/AI-Codereview-Gitlab.git
-cd AI-Codereview-Gitlab
 docker-compose up -d
 ```
 
-**3. 验证服务**
+**3. 验证部署**
 
-访问 http://your-server-ip:5001 显示 "The code review server is running." 说明服务启动成功。
-
-访问 http://your-server-ip:5002 看到一个审查日志页面，说明 Dashboard 启动成功。
+- 主服务验证：
+  - 访问 http://your-server-ip:5001
+  - 显示 "The code review server is running." 说明服务启动成功。
+- Dashboard 验证：
+  - 访问 http://your-server-ip:5002
+  - 看到一个审查日志页面，说明 Dashboard 启动成功。
 
 ### 方案二：本地Python环境部署
 
@@ -100,7 +107,7 @@ pip install -r requirements.txt
 
 **3. 配置环境变量**
 
-同 Docker 部署方案中的 【创建.env文件】
+同 Docker 部署方案中的.env 文件配置。
 
 **4. 启动服务**
 
