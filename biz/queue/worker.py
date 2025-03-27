@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from biz.entity.review_entity import MergeRequestReviewEntity, PushReviewEntity
 from biz.event.event_manager import event_manager
 from biz.gitlab.webhook_handler import filter_changes, MergeRequestHandler, PushHandler
-from biz.github.webhook_handler import PullRequestHandler as GithubPullRequestHandler, PushHandler as GithubPushHandler
+from biz.github.webhook_handler import filter_changes as filter_github_changes, PullRequestHandler as GithubPullRequestHandler, PushHandler as GithubPushHandler
 from biz.utils.code_reviewer import CodeReviewer
 from biz.utils.im import notifier
 from biz.utils.log import logger
@@ -52,7 +52,7 @@ def handle_push_event(webhook_data: dict, gitlab_token: str, gitlab_url: str, gi
             commits=commits,
             score=score,
             review_result=review_result,
-            gitlab_url_slug=gitlab_url_slug,
+            url_slug=gitlab_url_slug,
         ))
 
     except Exception as e:
@@ -111,7 +111,7 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
                     score=CodeReviewer.parse_review_score(review_text=review_result),
                     url=webhook_data['object_attributes']['url'],
                     review_result=review_result,
-                    gitlab_url_slug=gitlab_url_slug,
+                    url_slug=gitlab_url_slug,
                 )
             )
 
@@ -123,7 +123,7 @@ def handle_merge_request_event(webhook_data: dict, gitlab_token: str, gitlab_url
         notifier.send_notification(content=error_message)
         logger.error('出现未知错误: %s', error_message)
 
-def handle_github_push_event(webhook_data: dict, github_token: str, github_url: str):
+def handle_github_push_event(webhook_data: dict, github_token: str, github_url: str, github_url_slug: str):
     try:
         handler = GithubPushHandler(webhook_data, github_token, github_url)
         logger.info('GitHub Push event received')
@@ -138,7 +138,7 @@ def handle_github_push_event(webhook_data: dict, github_token: str, github_url: 
             # 获取PUSH的changes
             changes = handler.get_push_changes()
             logger.info('changes: %s', changes)
-            changes = filter_changes(changes)
+            changes = filter_github_changes(changes)
             if not changes:
                 logger.info('未检测到PUSH代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
             review_result = "关注的文件没有修改"
@@ -158,6 +158,7 @@ def handle_github_push_event(webhook_data: dict, github_token: str, github_url: 
             commits=commits,
             score=score,
             review_result=review_result,
+            url_slug=github_url_slug,
         ))
 
     except Exception as e:
@@ -166,12 +167,13 @@ def handle_github_push_event(webhook_data: dict, github_token: str, github_url: 
         logger.error('出现未知错误: %s', error_message)
 
 
-def handle_github_pull_request_event(webhook_data: dict, github_token: str, github_url: str):
+def handle_github_pull_request_event(webhook_data: dict, github_token: str, github_url: str, github_url_slug: str):
     '''
     处理GitHub Pull Request 事件
     :param webhook_data:
     :param github_token:
     :param github_url:
+    :param github_url_slug:
     :return:
     '''
     try:
@@ -183,7 +185,7 @@ def handle_github_pull_request_event(webhook_data: dict, github_token: str, gith
             # 获取Pull Request的changes
             changes = handler.get_pull_request_changes()
             logger.info('changes: %s', changes)
-            changes = filter_changes(changes)
+            changes = filter_github_changes(changes)
             if not changes:
                 logger.info('未检测到有关代码的修改,修改文件可能不满足SUPPORTED_EXTENSIONS。')
                 return
@@ -212,7 +214,8 @@ def handle_github_pull_request_event(webhook_data: dict, github_token: str, gith
                     commits=commits,
                     score=CodeReviewer.parse_review_score(review_text=review_result),
                     url=webhook_data['pull_request']['html_url'],
-                    review_result=review_result
+                    review_result=review_result,
+                    url_slug=github_url_slug
                 ))
 
     except Exception as e:

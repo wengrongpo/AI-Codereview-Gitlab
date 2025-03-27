@@ -1,10 +1,59 @@
 import json
+import os
+import re
 import time
 from urllib.parse import urljoin
 
 import requests
+from dotenv import load_dotenv
 
 from biz.utils.log import logger
+
+load_dotenv()
+# 从环境变量中获取支持的文件扩展名
+SUPPORTED_EXTENSIONS = os.getenv('SUPPORTED_EXTENSIONS', '.java,.py,.php').split(',')
+
+
+def filter_changes(changes: list):
+    '''
+    过滤数据，只保留支持的文件类型以及必要的字段信息
+    专门处理GitHub格式的变更
+    '''
+    # 筛选出未被删除的文件
+    not_deleted_changes = []
+    for change in changes:
+        # 优先检查status字段是否为"removed"
+        if change.get('status') == 'removed':
+            logger.info(f"Detected file deletion via status field: {change.get('new_path')}")
+            continue
+            
+        # 如果没有status字段或status不为"removed"，继续检查diff模式
+        diff = change.get('diff', '')
+        if diff:
+            diff_header_match = re.match(r'@@ -\d+,\d+ \+0,0 @@', diff)
+            if diff_header_match:
+                # 检查除了diff头部外的所有行是否都以减号开头
+                diff_lines = diff.split('\n')[1:]  # 跳过diff头部
+                if all(line.startswith('-') or not line for line in diff_lines):
+                    logger.info(f"Detected file deletion via diff pattern: {change.get('new_path')}")
+                    continue
+                    
+        not_deleted_changes.append(change)
+    
+    logger.info(f"SUPPORTED_EXTENSIONS: {SUPPORTED_EXTENSIONS}")
+    logger.info(f"After filtering deleted files: {not_deleted_changes}")
+    
+    # 过滤 `new_path` 以支持的扩展名结尾的元素, 仅保留diff和new_path字段
+    filtered_changes = [
+        {
+            'diff': item.get('diff', ''),
+            'new_path': item['new_path']
+        }
+        for item in not_deleted_changes
+        if any(item.get('new_path', '').endswith(ext) for ext in SUPPORTED_EXTENSIONS)
+    ]
+    logger.info(f"After filtering by extension: {filtered_changes}")
+    return filtered_changes
 
 
 class PullRequestHandler:
@@ -248,7 +297,8 @@ class PushHandler:
                 diff = {
                     'old_path': file.get('filename'),
                     'new_path': file.get('filename'),
-                    'diff': file.get('patch', '')
+                    'diff': file.get('patch', ''),
+                    'status': file.get('status', '')
                 }
                 diffs.append(diff)
             return diffs

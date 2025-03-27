@@ -125,6 +125,7 @@ def handle_github_webhook(event_type, data):
         return jsonify({'message': 'Missing GitHub access token'}), 400
         
     github_url = os.getenv('GITHUB_URL') or 'https://github.com'
+    github_url_slug = slugify_url(github_url)
     
     # 打印整个payload数据
     logger.info(f'Received GitHub event: {event_type}')
@@ -132,12 +133,12 @@ def handle_github_webhook(event_type, data):
     
     if event_type == "pull_request":
         # 使用handle_queue进行异步处理
-        handle_queue(handle_github_pull_request_event, data, github_token, github_url)
+        handle_queue(handle_github_pull_request_event, data, github_token, github_url, github_url_slug)
         # 立马返回响应
         return jsonify({'message': f'GitHub request received(event_type={event_type}), will process asynchronously.'}), 200
     elif event_type == "push":
         # 使用handle_queue进行异步处理
-        handle_queue(handle_github_push_event, data, github_token, github_url)
+        handle_queue(handle_github_push_event, data, github_token, github_url, github_url_slug)
         # 立马返回响应
         return jsonify({'message': f'GitHub request received(event_type={event_type}), will process asynchronously.'}), 200
     else:
@@ -148,51 +149,51 @@ def handle_github_webhook(event_type, data):
 def handle_gitlab_webhook(data):
     object_kind = data.get("object_kind")
 
-        # 优先从请求头获取，如果没有，则从环境变量获取，如果没有，则从推送事件中获取
-        gitlab_url = os.getenv('GITLAB_URL') or request.headers.get('X-Gitlab-Instance')
-        if not gitlab_url:
-            repository = data.get('repository')
-            if not repository:
-                return jsonify({'message': 'Missing GitLab URL'}), 400
-            homepage = repository.get("homepage")
-            if not homepage:
-                return jsonify({'message': 'Missing GitLab URL'}), 400
-            try:
-                parsed_url = urlparse(homepage)
-                gitlab_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
-            except Exception as e:
-                return jsonify({"error": f"Failed to parse homepage URL: {str(e)}"}), 400
+    # 优先从请求头获取，如果没有，则从环境变量获取，如果没有，则从推送事件中获取
+    gitlab_url = os.getenv('GITLAB_URL') or request.headers.get('X-Gitlab-Instance')
+    if not gitlab_url:
+        repository = data.get('repository')
+        if not repository:
+            return jsonify({'message': 'Missing GitLab URL'}), 400
+        homepage = repository.get("homepage")
+        if not homepage:
+            return jsonify({'message': 'Missing GitLab URL'}), 400
+        try:
+            parsed_url = urlparse(homepage)
+            gitlab_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
+        except Exception as e:
+            return jsonify({"error": f"Failed to parse homepage URL: {str(e)}"}), 400
 
-        # 优先从环境变量获取，如果没有，则从请求头获取
-        gitlab_token = os.getenv('GITLAB_ACCESS_TOKEN') or request.headers.get('X-Gitlab-Token')
-        # 如果gitlab_token为空，返回错误
-        if not gitlab_token:
-            return jsonify({'message': 'Missing GitLab access token'}), 400
+    # 优先从环境变量获取，如果没有，则从请求头获取
+    gitlab_token = os.getenv('GITLAB_ACCESS_TOKEN') or request.headers.get('X-Gitlab-Token')
+    # 如果gitlab_token为空，返回错误
+    if not gitlab_token:
+        return jsonify({'message': 'Missing GitLab access token'}), 400
 
-        gitlab_url_slug = slugify_url(gitlab_url)
+    gitlab_url_slug = slugify_url(gitlab_url)
 
-        # 打印整个payload数据，或根据需求进行处理
-        logger.info(f'Received event: {object_kind}')
-        logger.info(f'Payload: {json.dumps(data)}')
+    # 打印整个payload数据，或根据需求进行处理
+    logger.info(f'Received event: {object_kind}')
+    logger.info(f'Payload: {json.dumps(data)}')
 
-        # 处理Merge Request Hook
-        if object_kind == "merge_request":
-            # 创建一个新进程进行异步处理
-            handle_queue(handle_merge_request_event, data, gitlab_token, gitlab_url, gitlab_url_slug)
-            # 立马返回响应
-            return jsonify(
-                {'message': f'Request received(object_kind={object_kind}), will process asynchronously.'}), 200
-        elif object_kind == "push":
-            # 创建一个新进程进行异步处理
-            # TODO check if PUSH_REVIEW_ENABLED is needed here
-            handle_queue(handle_push_event, data, gitlab_token, gitlab_url, gitlab_url_slug)
-            # 立马返回响应
-            return jsonify(
-                {'message': f'Request received(object_kind={object_kind}), will process asynchronously.'}), 200
-        else:
-            error_message = f'Only merge_request and push events are supported (both Webhook and System Hook), but received: {object_kind}.'
-            logger.error(error_message)
-            return jsonify(error_message), 400
+    # 处理Merge Request Hook
+    if object_kind == "merge_request":
+        # 创建一个新进程进行异步处理
+        handle_queue(handle_merge_request_event, data, gitlab_token, gitlab_url, gitlab_url_slug)
+        # 立马返回响应
+        return jsonify(
+            {'message': f'Request received(object_kind={object_kind}), will process asynchronously.'}), 200
+    elif object_kind == "push":
+        # 创建一个新进程进行异步处理
+        # TODO check if PUSH_REVIEW_ENABLED is needed here
+        handle_queue(handle_push_event, data, gitlab_token, gitlab_url, gitlab_url_slug)
+        # 立马返回响应
+        return jsonify(
+            {'message': f'Request received(object_kind={object_kind}), will process asynchronously.'}), 200
+    else:
+        error_message = f'Only merge_request and push events are supported (both Webhook and System Hook), but received: {object_kind}.'
+        logger.error(error_message)
+        return jsonify(error_message), 400
 
 if __name__ == '__main__':
     # 启动定时任务调度器
