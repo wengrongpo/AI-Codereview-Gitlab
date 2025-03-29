@@ -18,8 +18,11 @@ from biz.utils.log import logger
 from biz.utils.queue import handle_queue
 from biz.utils.reporter import Reporter
 
+from biz.utils.config_checker import check_config
 load_dotenv("conf/.env")
 api_app = Flask(__name__)
+
+
 
 PUSH_REVIEW_ENABLED = os.environ.get('PUSH_REVIEW_ENABLED', '0') == '1'
 
@@ -196,6 +199,7 @@ def handle_gitlab_webhook(data):
         return jsonify(error_message), 400
 
 if __name__ == '__main__':
+    check_config()
     # 启动定时任务调度器
     setup_scheduler()
 
