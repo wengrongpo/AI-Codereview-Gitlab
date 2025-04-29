@@ -40,4 +40,4 @@ code_review_prompt:
     {diffs_text}
     
     提交历史(commits)：
-    {{commits_text}}
+    {commits_text}
